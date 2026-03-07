@@ -1,0 +1,49 @@
+[
+  {
+    "id": "comp-1",
+    "title": "Best Meme of the Week",
+    "owner": "user-1",
+    "createdAt": "2026-03-01T12:00:00Z",
+    "members": [
+      "user-1",
+      "user-2"
+    ]
+  },
+  {
+    "id": "comp-2",
+    "title": "Dark Humor Championship",
+    "owner": "user-2",
+    "createdAt": "2026-03-01T13:00:00Z",
+    "members": [
+      "user-2"
+    ]
+  },
+  {
+    "id": "1dede63f-2ec1-48fb-afd1-bccf02048675",
+    "title": "asda",
+    "owner": "user-1",
+    "createdAt": "2026-03-01T12:39:18.174Z",
+    "members": [
+      "user-1",
+      "user-2"
+    ]
+  },
+  {
+    "id": "6a4620c7-355d-4012-8db8-f3be9e96a187",
+    "title": "sdfs",
+    "owner": "user-1",
+    "createdAt": "2026-03-02T12:19:17.391Z",
+    "members": [
+      "user-1"
+    ]
+  },
+  {
+    "id": "aff9b87d-5893-4207-8b78-6e1f9fce7f7f",
+    "title": "dfgd",
+    "owner": "user-1",
+    "createdAt": "2026-03-02T12:23:52.195Z",
+    "members": [
+      "user-1"
+    ]
+  }
+]
