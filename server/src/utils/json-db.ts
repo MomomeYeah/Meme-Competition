@@ -1,12 +1,12 @@
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 
-const DATA_DIR = join(process.cwd(), 'data');
+const DATA_DIR = join(process.cwd(), "data");
 
 export function readJsonFile<T>(filename: string): T[] {
     try {
         const filepath = join(DATA_DIR, filename);
-        const content = readFileSync(filepath, 'utf-8');
+        const content = readFileSync(filepath, "utf-8");
         return JSON.parse(content);
     } catch (error) {
         // File doesn't exist or is empty, return empty array

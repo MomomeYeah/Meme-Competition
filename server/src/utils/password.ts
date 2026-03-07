@@ -1,12 +1,12 @@
 /**
-* Simple password validation for MVP.
-* In production, use bcrypt for hashing passwords.
-*/
+ * Simple password validation for MVP.
+ * In production, use bcrypt for hashing passwords.
+ */
 
 export function hashPassword(password: string): string {
     // For MVP, just use a simple hash. In production, use bcrypt.
     // This is NOT secure for production!
-    return Buffer.from(password).toString('base64');
+    return Buffer.from(password).toString("base64");
 }
 
 export function verifyPassword(password: string, hash: string): boolean {
@@ -16,7 +16,7 @@ export function verifyPassword(password: string, hash: string): boolean {
 
 export function validatePassword(password: string): { valid: boolean; error?: string } {
     if (!password || password.length < 4) {
-        return { valid: false, error: 'Password must be at least 4 characters' };
+        return { valid: false, error: "Password must be at least 4 characters" };
     }
     return { valid: true };
 }
