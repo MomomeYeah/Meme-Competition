@@ -1,21 +1,21 @@
 /**
-* plugins/vuetify.ts
-*
-* Framework documentation: https://vuetifyjs.com
-*/
+ * plugins/vuetify.ts
+ *
+ * Framework documentation: https://vuetifyjs.com
+ */
 
-import { createVuetify } from 'vuetify'
-import '@mdi/font/css/materialdesignicons.css'
-import '../styles/layers.css'
-import 'vuetify/styles'
+import { createVuetify } from "vuetify";
+import "@mdi/font/css/materialdesignicons.css";
+import "../styles/layers.css";
+import "vuetify/styles";
 
 export default createVuetify({
     theme: {
-        defaultTheme: 'system',
+        defaultTheme: "system",
         utilities: false,
     },
     display: {
-        mobileBreakpoint: 'md',
+        mobileBreakpoint: "md",
         thresholds: {
             xs: 0,
             sm: 600,
@@ -25,4 +25,4 @@ export default createVuetify({
             xxl: 2138,
         },
     },
-})
+});

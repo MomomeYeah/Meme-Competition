@@ -4,7 +4,7 @@
             <v-col cols="12" md="8" offset-md="2">
                 <v-card>
                     <v-card-title>Create New Competition</v-card-title>
-                    
+
                     <v-card-text>
                         <form @submit.prevent="handleCreateCompetition">
                             <v-text-field
@@ -17,11 +17,11 @@
                                 :error-messages="errors.title"
                                 required
                             />
-                            
+
                             <v-alert v-if="competitionsStore.error" type="error" class="mb-4">
                                 {{ competitionsStore.error }}
                             </v-alert>
-                            
+
                             <v-row class="mt-6">
                                 <v-col>
                                     <v-btn variant="outlined" @click="router.back()">
@@ -47,31 +47,31 @@
 </template>
 
 <script setup lang="ts">
-    import { reactive } from 'vue';
-    import { useRouter } from 'vue-router';
-    import { useCompetitionsStore } from '../stores/competitions';
-    import { useAuthStore } from '../stores/auth';
+    import { reactive } from "vue";
+    import { useRouter } from "vue-router";
+    import { useCompetitionsStore } from "../stores/competitions";
+    import { useAuthStore } from "../stores/auth";
 
     const router = useRouter();
     const competitionsStore = useCompetitionsStore();
     const authStore = useAuthStore();
 
     const formData = reactive({
-        title: '',
+        title: "",
     });
 
     const errors = reactive({
-        title: '',
+        title: "",
     });
 
     async function handleCreateCompetition() {
-        errors.title = '';
-        
+        errors.title = "";
+
         if (!formData.title || formData.title.trim().length === 0) {
-            errors.title = 'Title is required';
+            errors.title = "Title is required";
             return;
         }
-        
+
         try {
             const newCompetition = await competitionsStore.createCompetition(formData.title);
             router.push(`/competitions/${newCompetition.id}`);

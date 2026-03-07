@@ -59,9 +59,7 @@
 
                     <div class="text-center">
                         <p class="text-body2 mb-2">Already have an account?</p>
-                        <v-btn variant="text" to="/login" size="small">
-                            Sign in
-                        </v-btn>
+                        <v-btn variant="text" to="/login" size="small"> Sign in </v-btn>
                     </div>
                 </form>
             </v-card-text>
@@ -70,40 +68,40 @@
 </template>
 
 <script setup lang="ts">
-    import { reactive } from 'vue';
-    import { useRouter } from 'vue-router';
-    import { useAuthStore } from '../stores/auth';
+    import { reactive } from "vue";
+    import { useRouter } from "vue-router";
+    import { useAuthStore } from "../stores/auth";
 
     const router = useRouter();
     const authStore = useAuthStore();
 
     const formData = reactive({
-        username: '',
-        email: '',
-        password: '',
+        username: "",
+        email: "",
+        password: "",
     });
 
     const errors = reactive({
-        username: '',
-        email: '',
-        password: '',
+        username: "",
+        email: "",
+        password: "",
     });
 
     async function handleRegister() {
-        errors.username = '';
-        errors.email = '';
-        errors.password = '';
+        errors.username = "";
+        errors.email = "";
+        errors.password = "";
 
         if (!formData.username) {
-            errors.username = 'Username is required';
+            errors.username = "Username is required";
         }
 
         if (!formData.email) {
-            errors.email = 'Email is required';
+            errors.email = "Email is required";
         }
 
         if (!formData.password) {
-            errors.password = 'Password is required';
+            errors.password = "Password is required";
             return;
         }
 
@@ -113,7 +111,7 @@
 
         try {
             await authStore.register(formData.username, formData.email, formData.password);
-            router.push('/dashboard');
+            router.push("/dashboard");
         } catch (error) {
             // Error is handled by AuthStore
         }

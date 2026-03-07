@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient from "./client";
 
 export interface User {
     id: string;
@@ -18,7 +18,10 @@ export interface RegisterResponse {
 }
 
 export async function login(username: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post<{ success: boolean; data: LoginResponse }>('/auth/login', {
+    const response = await apiClient.post<{
+        success: boolean;
+        data: LoginResponse;
+    }>("/auth/login", {
         username,
         password,
     });
@@ -28,9 +31,12 @@ export async function login(username: string, password: string): Promise<LoginRe
 export async function register(
     username: string,
     email: string,
-    password: string,
+    password: string
 ): Promise<RegisterResponse> {
-    const response = await apiClient.post<{ success: boolean; data: RegisterResponse }>('/auth/register', {
+    const response = await apiClient.post<{
+        success: boolean;
+        data: RegisterResponse;
+    }>("/auth/register", {
         username,
         email,
         password,
@@ -39,10 +45,13 @@ export async function register(
 }
 
 export async function getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<{ success: boolean; data: { user: User } }>('/auth/me');
+    const response = await apiClient.get<{
+        success: boolean;
+        data: { user: User };
+    }>("/auth/me");
     return response.data.data.user;
 }
 
 export async function logout(): Promise<void> {
-    await apiClient.post('/auth/logout');
+    await apiClient.post("/auth/logout");
 }
