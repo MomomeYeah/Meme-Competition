@@ -1,5 +1,5 @@
 import { type User, type AuthRequest } from "../models/types";
-import { readJsonFile, writeJsonFile, findByProperty } from "../utils/json-db";
+import { findById, findByProperty, create } from "../utils/json-db";
 import { hashPassword, verifyPassword, validatePassword } from "../utils/password";
 import { generateToken } from "../utils/jwt";
 import { AuthError, ValidationError, ConflictError } from "../utils/errors";
@@ -21,14 +21,12 @@ export class UserService {
             throw new ValidationError(passwordValidation.error || "Invalid password");
         }
 
-        const users = readJsonFile<User>(USERS_FILE);
-
         // Check if user already exists
-        if (findByProperty(users, "username", username)) {
+        if (findByProperty(USERS_FILE, "username", username)) {
             throw new ConflictError("Username already exists");
         }
 
-        if (findByProperty(users, "email", email)) {
+        if (findByProperty(USERS_FILE, "email", email)) {
             throw new ConflictError("Email already exists");
         }
 
@@ -42,8 +40,7 @@ export class UserService {
             createdAt: new Date().toISOString(),
         };
 
-        users.push(user);
-        writeJsonFile(USERS_FILE, users);
+        create<User>(USERS_FILE, user);
 
         const token = generateToken(userId, username);
 
@@ -58,8 +55,7 @@ export class UserService {
         username: string,
         password: string
     ): { userId: string; token: string; user: User } {
-        const users = readJsonFile<User>(USERS_FILE);
-        const user = findByProperty(users, "username", username);
+        const user = findByProperty<User>(USERS_FILE, "username", username);
 
         if (!user || !verifyPassword(password, user.passwordHash)) {
             throw new AuthError("Invalid username or password");
@@ -75,8 +71,7 @@ export class UserService {
     }
 
     static getUserById(userId: string): User {
-        const users = readJsonFile<User>(USERS_FILE);
-        const user = users.find((u) => u.id === userId);
+        const user = findById<User>(USERS_FILE, userId);
 
         if (!user) {
             throw new AuthError("User not found");

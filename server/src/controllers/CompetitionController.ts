@@ -5,13 +5,11 @@ import { type ApiResponse } from "../models/types";
 export class CompetitionController {
     static async createCompetition(req: Request, res: Response): Promise<void> {
         try {
-            if (!req.user) {
-                res.status(401).json({ success: false, error: "Not authenticated" });
-                return;
-            }
+            // user is guaranteed to exist because of authMiddleware
+            const userId = req.user!.userId;
 
             const { title } = req.body;
-            const competition = CompetitionService.createCompetition(title, req.user.userId);
+            const competition = CompetitionService.createCompetition(title, userId);
 
             const response: ApiResponse = {
                 success: true,
@@ -26,6 +24,9 @@ export class CompetitionController {
 
     static async getCompetitionById(req: Request, res: Response): Promise<void> {
         try {
+            // user is guaranteed to exist because of authMiddleware
+            const userId = req.user!.userId;
+
             const { id } = req.params;
             if (!id) {
                 res.status(400).json({ success: false, error: "Competition ID is required" });
@@ -37,16 +38,13 @@ export class CompetitionController {
             }
             const competition = CompetitionService.getCompetitionById(id);
 
-            res.json({ success: true, data: competition });
-        } catch (error) {
-            CompetitionController.handleError(error, res);
-        }
-    }
+            // ensure the requesting user is a member
+            if (!competition.members.includes(userId)) {
+                res.status(403).json({ success: false, error: "Access denied" });
+                return;
+            }
 
-    static async getAllCompetitions(req: Request, res: Response): Promise<void> {
-        try {
-            const competitions = CompetitionService.getAllCompetitions();
-            res.json({ success: true, data: competitions });
+            res.json({ success: true, data: competition });
         } catch (error) {
             CompetitionController.handleError(error, res);
         }
@@ -54,28 +52,14 @@ export class CompetitionController {
 
     static async getUserCompetitions(req: Request, res: Response): Promise<void> {
         try {
-            if (!req.user) {
-                res.status(401).json({ success: false, error: "Not authenticated" });
-                return;
-            }
-
-            const { userId } = req.params;
-            if (!userId) {
-                res.status(400).json({ success: false, error: "User ID is required" });
-                return;
-            }
-            if (typeof userId !== "string" || userId.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid user ID" });
-                return;
-            }
-            const owned = CompetitionService.getCompetitionsByOwner(userId);
-            const joined = CompetitionService.getCompetitionsByMember(userId);
+            // user is guaranteed to exist because of authMiddleware
+            const userId = req.user!.userId;
+            const competitions = CompetitionService.getCompetitionsByMember(userId);
 
             res.json({
                 success: true,
                 data: {
-                    owned,
-                    joined: joined.filter((c) => c.owner !== userId), // Remove competitions they own
+                    competitions: competitions,
                 },
             });
         } catch (error) {
@@ -85,10 +69,8 @@ export class CompetitionController {
 
     static async joinCompetition(req: Request, res: Response): Promise<void> {
         try {
-            if (!req.user) {
-                res.status(401).json({ success: false, error: "Not authenticated" });
-                return;
-            }
+            // user is guaranteed to exist because of authMiddleware
+            const userId = req.user!.userId;
 
             const { id } = req.params;
             if (!id) {
@@ -99,9 +81,31 @@ export class CompetitionController {
                 res.status(400).json({ success: false, error: "Invalid competition ID" });
                 return;
             }
-            const competition = CompetitionService.joinCompetition(id, req.user.userId);
+            const competition = CompetitionService.joinCompetition(id, userId);
 
             res.json({ success: true, data: competition });
+        } catch (error) {
+            CompetitionController.handleError(error, res);
+        }
+    }
+
+    static async deleteCompetition(req: Request, res: Response): Promise<void> {
+        try {
+            // user is guaranteed to exist because of authMiddleware
+            const userId = req.user!.userId;
+
+            const { id } = req.params;
+            if (!id) {
+                res.status(400).json({ success: false, error: "Competition ID is required" });
+                return;
+            }
+            if (typeof id !== "string" || id.trim().length === 0) {
+                res.status(400).json({ success: false, error: "Invalid competition ID" });
+                return;
+            }
+
+            CompetitionService.deleteCompetition(id, userId);
+            res.status(204).send();
         } catch (error) {
             CompetitionController.handleError(error, res);
         }

@@ -51,13 +51,24 @@
                                     Back
                                 </v-btn>
                             </v-col>
-                            <v-col v-if="!isMember && authStore.user" class="text-right">
+                            <v-col
+                                v-if="
+                                    authStore.user &&
+                                    authStore.user.id ===
+                                        competitionsStore.currentCompetition?.owner
+                                "
+                                class="text-right"
+                            >
+                                <v-btn variant="outlined" color="secondary" @click="copyShareLink">
+                                    Share Link
+                                </v-btn>
                                 <v-btn
-                                    color="primary"
-                                    :loading="competitionsStore.loading"
-                                    @click="handleJoin"
+                                    variant="outlined"
+                                    color="error"
+                                    class="ml-2"
+                                    @click="handleDelete"
                                 >
-                                    Join Competition
+                                    Delete
                                 </v-btn>
                             </v-col>
                         </v-row>
@@ -80,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, onMounted, ref } from "vue";
+    import { onMounted, ref } from "vue";
     import { useRoute, useRouter } from "vue-router";
     import { useAuthStore } from "../stores/auth";
     import { useCompetitionsStore } from "../stores/competitions";
@@ -95,11 +106,6 @@
     const snackbarType = ref<"success" | "error">("success");
 
     const competitionId = route.params.id as string;
-
-    const isMember = computed(() => {
-        if (!authStore.user || !competitionsStore.currentCompetition) return false;
-        return competitionsStore.currentCompetition.members.includes(authStore.user.id);
-    });
 
     onMounted(async () => {
         try {
@@ -123,14 +129,33 @@
         return userId;
     }
 
-    async function handleJoin() {
-        try {
-            await competitionsStore.joinCompetition(competitionId);
-            snackbarMessage.value = "Successfully joined competition!";
+    function copyShareLink() {
+        if (!competitionId) return;
+        const url = `${window.location.origin}/invite/${competitionId}`;
+        navigator.clipboard.writeText(url).then(() => {
+            snackbarMessage.value = "Link copied to clipboard";
             snackbarType.value = "success";
             showSnackbar.value = true;
-        } catch (error) {
-            snackbarMessage.value = "Failed to join competition";
+        });
+    }
+
+    async function handleDelete() {
+        if (
+            !confirm(
+                "Are you sure you want to delete this competition? This action cannot be undone."
+            )
+        ) {
+            return;
+        }
+
+        try {
+            await competitionsStore.deleteCompetition(competitionId);
+            snackbarMessage.value = "Competition deleted";
+            snackbarType.value = "success";
+            showSnackbar.value = true;
+            router.push("/dashboard");
+        } catch (err: any) {
+            snackbarMessage.value = err.response?.data?.error || "Failed to delete competition";
             snackbarType.value = "error";
             showSnackbar.value = true;
         }

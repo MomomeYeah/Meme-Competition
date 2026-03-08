@@ -1,5 +1,5 @@
 import { type Competition } from "../models/types";
-import { readJsonFile, writeJsonFile, findById, filterByProperty } from "../utils/json-db";
+import { findById, filterByProperty, create, updateById, deleteById } from "../utils/json-db";
 import { ValidationError, NotFoundError } from "../utils/errors";
 import { generateId } from "../utils/generate-id";
 
@@ -11,8 +11,6 @@ export class CompetitionService {
             throw new ValidationError("Title is required");
         }
 
-        const competitions = readJsonFile<Competition>(COMPETITIONS_FILE);
-
         const competition: Competition = {
             id: generateId(),
             title: title.trim(),
@@ -21,52 +19,51 @@ export class CompetitionService {
             members: [ownerId],
         };
 
-        competitions.push(competition);
-        writeJsonFile(COMPETITIONS_FILE, competitions);
-
-        return competition;
+        return create(COMPETITIONS_FILE, competition);
     }
 
     static getCompetitionById(id: string): Competition {
-        const competitions = readJsonFile<Competition>(COMPETITIONS_FILE);
-        const competition = findById(competitions, id);
+        const competition = findById<Competition>(COMPETITIONS_FILE, id);
 
         if (!competition) {
             throw new NotFoundError("Competition not found");
         }
 
         return competition;
-    }
-
-    static getCompetitionsByOwner(ownerId: string): Competition[] {
-        const competitions = readJsonFile<Competition>(COMPETITIONS_FILE);
-        return filterByProperty(competitions, "owner", ownerId);
     }
 
     static getCompetitionsByMember(userId: string): Competition[] {
-        const competitions = readJsonFile<Competition>(COMPETITIONS_FILE);
-        return competitions.filter((c) => c.members.includes(userId));
-    }
-
-    static getAllCompetitions(): Competition[] {
-        return readJsonFile<Competition>(COMPETITIONS_FILE);
+        return filterByProperty(COMPETITIONS_FILE, "members", userId);
     }
 
     static joinCompetition(competitionId: string, userId: string): Competition {
-        const competitions = readJsonFile<Competition>(COMPETITIONS_FILE);
-        const competition = findById(competitions, competitionId);
+        const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
 
         if (!competition) {
             throw new NotFoundError("Competition not found");
         }
 
-        if (competition.members.includes(userId)) {
-            throw new ValidationError("Already a member of this competition");
+        if (!competition.members.includes(userId)) {
+            competition.members.push(userId);
+            updateById<Competition>(COMPETITIONS_FILE, competitionId, {
+                members: competition.members,
+            });
         }
 
-        competition.members.push(userId);
-        writeJsonFile(COMPETITIONS_FILE, competitions);
-
         return competition;
+    }
+
+    static deleteCompetition(competitionId: string, requesterId: string): void {
+        const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
+
+        if (!competition) {
+            throw new NotFoundError("Competition not found");
+        }
+
+        if (competition.owner !== requesterId) {
+            throw new ValidationError("Only the owner can delete this competition");
+        }
+
+        deleteById<Competition>(COMPETITIONS_FILE, competitionId);
     }
 }

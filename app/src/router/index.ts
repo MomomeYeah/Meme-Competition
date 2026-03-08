@@ -14,6 +14,7 @@ import Register from "@/pages/Register.vue";
 import Dashboard from "@/pages/Dashboard.vue";
 import CreateCompetition from "@/pages/CreateCompetition.vue";
 import CompetitionDetail from "@/pages/CompetitionDetail.vue";
+import Invite from "@/pages/Invite.vue";
 
 const routes: RouteRecordRaw[] = [
     {
@@ -44,7 +45,13 @@ const routes: RouteRecordRaw[] = [
         path: "/competitions/:id",
         name: "CompetitionDetail",
         component: CompetitionDetail,
-        meta: { requiresAuth: false },
+        meta: { requiresAuth: true },
+    },
+    {
+        path: "/invite/:id",
+        name: "Invite",
+        component: Invite,
+        meta: { requiresAuth: true },
     },
     {
         path: "/",
@@ -74,8 +81,8 @@ router.beforeEach(async (to, from, next) => {
     const isAuthenticated = authStore.isAuthenticated;
 
     if (requiresAuth && !isAuthenticated) {
-        // Redirect to login if trying to access protected route
-        next("/login");
+        // Redirect to login if trying to access protected route, preserve intended destination
+        next({ path: "/login", query: { redirect: to.fullPath } });
     } else if (
         !requiresAuth &&
         isAuthenticated &&

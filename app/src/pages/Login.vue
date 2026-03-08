@@ -89,7 +89,9 @@
 
         try {
             await authStore.login(formData.username, formData.password);
-            router.push("/dashboard");
+            // redirect back if a 'redirect' query parameter was provided
+            const redirectTo = (router.currentRoute.value.query.redirect as string) || "/dashboard";
+            router.push(redirectTo);
         } catch (error) {
             // Error is handled by AuthStore
         }

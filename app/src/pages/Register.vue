@@ -111,7 +111,8 @@
 
         try {
             await authStore.register(formData.username, formData.email, formData.password);
-            router.push("/dashboard");
+            const redirectTo = (router.currentRoute.value.query.redirect as string) || "/dashboard";
+            router.push(redirectTo);
         } catch (error) {
             // Error is handled by AuthStore
         }
