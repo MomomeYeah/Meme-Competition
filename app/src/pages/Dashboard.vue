@@ -11,9 +11,6 @@
             </v-row>
 
             <v-row v-if="competitionsStore.userCompetitions.length > 0">
-                <v-col cols="12">
-                    <h2 class="text-h6 mb-4">My Competitions</h2>
-                </v-col>
                 <v-col
                     v-for="comp in competitionsStore.userCompetitions"
                     :key="comp.id"
@@ -28,7 +25,7 @@
                 </v-col>
             </v-row>
 
-            <v-row v-if="competitionsStore.userCompetitions.length === 0">
+            <v-row v-else>
                 <v-col cols="12">
                     <v-alert type="info">
                         You haven't created or joined any competitions yet.

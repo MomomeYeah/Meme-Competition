@@ -1,23 +1,16 @@
 [
-    {
-        "id": "user-1",
-        "username": "alice",
-        "email": "alice@example.com",
-        "passwordHash": "YWxpY2VwYXNzd29yZA==",
-        "createdAt": "2026-03-01T10:00:00Z"
-    },
-    {
-        "id": "user-2",
-        "username": "bob",
-        "email": "bob@example.com",
-        "passwordHash": "Ym9icGFzc3dvcmQ=",
-        "createdAt": "2026-03-01T11:00:00Z"
-    },
-    {
-        "id": "465a8e1c-91e4-46dd-925c-544ed65e1316",
-        "username": "Carol",
-        "email": "test@example.com",
-        "passwordHash": "Y2Fyb2xwYXNzd29yZA==",
-        "createdAt": "2026-03-01T11:49:42.131Z"
-    }
+  {
+    "id": "user-1",
+    "username": "alice",
+    "email": "alice@example.com",
+    "passwordHash": "YWxpY2VwYXNzd29yZA==",
+    "createdAt": "2026-03-01T10:00:00Z"
+  },
+  {
+    "id": "user-2",
+    "username": "bob",
+    "email": "bob@example.com",
+    "passwordHash": "Ym9icGFzc3dvcmQ=",
+    "createdAt": "2026-03-01T11:00:00Z"
+  }
 ]
