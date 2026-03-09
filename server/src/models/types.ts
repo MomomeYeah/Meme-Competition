@@ -9,7 +9,8 @@ export interface User {
 export interface Competition {
     id: string;
     title: string;
-    owner: string;
+    // owner id; null indicates no current owner (competition open for claim)
+    owner: string | null;
     createdAt: string;
     members: string[];
 }

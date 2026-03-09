@@ -111,6 +111,46 @@ export class CompetitionController {
         }
     }
 
+    static async relinquishOwnership(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = req.user!.userId;
+            const { id } = req.params;
+            if (!id) {
+                res.status(400).json({ success: false, error: "Competition ID is required" });
+                return;
+            }
+            if (typeof id !== "string" || id.trim().length === 0) {
+                res.status(400).json({ success: false, error: "Invalid competition ID" });
+                return;
+            }
+
+            const comp = CompetitionService.relinquishOwnership(id, userId);
+            res.json({ success: true, data: comp });
+        } catch (error) {
+            CompetitionController.handleError(error, res);
+        }
+    }
+
+    static async claimOwnership(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = req.user!.userId;
+            const { id } = req.params;
+            if (!id) {
+                res.status(400).json({ success: false, error: "Competition ID is required" });
+                return;
+            }
+            if (typeof id !== "string" || id.trim().length === 0) {
+                res.status(400).json({ success: false, error: "Invalid competition ID" });
+                return;
+            }
+
+            const comp = CompetitionService.claimOwnership(id, userId);
+            res.json({ success: true, data: comp });
+        } catch (error) {
+            CompetitionController.handleError(error, res);
+        }
+    }
+
     private static handleError(error: any, res: Response): void {
         if (error.statusCode) {
             res.status(error.statusCode).json({ success: false, error: error.message });

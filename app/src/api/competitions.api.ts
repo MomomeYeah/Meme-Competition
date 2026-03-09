@@ -3,7 +3,8 @@ import apiClient from "./client";
 export interface Competition {
     id: string;
     title: string;
-    owner: string;
+    // may be null if no owner
+    owner: string | null;
     createdAt: string;
     members: string[];
 }
@@ -36,6 +37,22 @@ export async function joinCompetition(competitionId: string): Promise<Competitio
 
 export async function deleteCompetition(competitionId: string): Promise<void> {
     await apiClient.delete(`/competitions/${competitionId}`);
+}
+
+export async function relinquishOwnership(competitionId: string): Promise<Competition> {
+    const response = await apiClient.post<{
+        success: boolean;
+        data: Competition;
+    }>(`/competitions/${competitionId}/relinquish`);
+    return response.data.data;
+}
+
+export async function claimOwnership(competitionId: string): Promise<Competition> {
+    const response = await apiClient.post<{
+        success: boolean;
+        data: Competition;
+    }>(`/competitions/${competitionId}/claim`);
+    return response.data.data;
 }
 
 export async function getUserCompetitions(userId: string): Promise<Competition[]> {

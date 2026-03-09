@@ -9,5 +9,7 @@ router.get("/", authMiddleware, CompetitionController.getUserCompetitions);
 router.get("/:id", authMiddleware, CompetitionController.getCompetitionById);
 router.post("/:id/join", authMiddleware, CompetitionController.joinCompetition);
 router.delete("/:id", authMiddleware, CompetitionController.deleteCompetition);
+router.post("/:id/relinquish", authMiddleware, CompetitionController.relinquishOwnership);
+router.post("/:id/claim", authMiddleware, CompetitionController.claimOwnership);
 
 export default router;

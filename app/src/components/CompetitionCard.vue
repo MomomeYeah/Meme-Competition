@@ -24,13 +24,7 @@
 </template>
 
 <script setup lang="ts">
-    interface Competition {
-        id: string;
-        title: string;
-        owner: string;
-        createdAt: string;
-        members: string[];
-    }
+    import { type Competition } from "../api/competitions.api";
 
     defineProps<{
         competition: Competition;

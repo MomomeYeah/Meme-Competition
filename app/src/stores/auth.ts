@@ -2,15 +2,8 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import * as authApi from "../api/auth.api";
 
-export interface AuthUser {
-    id: string;
-    username: string;
-    email: string;
-    createdAt: string;
-}
-
 export const useAuthStore = defineStore("auth", () => {
-    const user = ref<AuthUser | null>(null);
+    const user = ref<authApi.User | null>(null);
     const loading = ref(false);
     const error = ref<string | null>(null);
 
@@ -21,7 +14,7 @@ export const useAuthStore = defineStore("auth", () => {
         error.value = null;
         try {
             const response = await authApi.login(username, password);
-            user.value = response.user as AuthUser;
+            user.value = response.user as authApi.User;
             return response;
         } catch (err: any) {
             error.value = err.response?.data?.error || "Login failed";
@@ -36,7 +29,7 @@ export const useAuthStore = defineStore("auth", () => {
         error.value = null;
         try {
             const response = await authApi.register(username, email, password);
-            user.value = response.user as AuthUser;
+            user.value = response.user as authApi.User;
             return response;
         } catch (err: any) {
             error.value = err.response?.data?.error || "Registration failed";
@@ -50,7 +43,7 @@ export const useAuthStore = defineStore("auth", () => {
         loading.value = true;
         try {
             const currentUser = await authApi.getCurrentUser();
-            user.value = currentUser as AuthUser;
+            user.value = currentUser as authApi.User;
         } catch (err) {
             user.value = null;
         } finally {

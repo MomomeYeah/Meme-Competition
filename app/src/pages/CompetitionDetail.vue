@@ -51,14 +51,7 @@
                                     Back
                                 </v-btn>
                             </v-col>
-                            <v-col
-                                v-if="
-                                    authStore.user &&
-                                    authStore.user.id ===
-                                        competitionsStore.currentCompetition?.owner
-                                "
-                                class="text-right"
-                            >
+                            <v-col v-if="isOwner" class="text-right">
                                 <v-btn variant="outlined" color="secondary" @click="copyShareLink">
                                     Share Link
                                 </v-btn>
@@ -69,6 +62,23 @@
                                     @click="handleDelete"
                                 >
                                     Delete
+                                </v-btn>
+                                <v-btn
+                                    variant="outlined"
+                                    color="warning"
+                                    class="ml-2"
+                                    @click="handleRelinquish"
+                                >
+                                    Relinquish Ownership
+                                </v-btn>
+                            </v-col>
+                            <v-col v-else-if="isMember && isOwnerless" class="text-right">
+                                <v-btn
+                                    color="primary"
+                                    :loading="competitionsStore.loading"
+                                    @click="handleClaim"
+                                >
+                                    Claim Ownership
                                 </v-btn>
                             </v-col>
                         </v-row>
@@ -91,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-    import { onMounted, ref } from "vue";
+    import { computed, onMounted, ref } from "vue";
     import { useRoute, useRouter } from "vue-router";
     import { useAuthStore } from "../stores/auth";
     import { useCompetitionsStore } from "../stores/competitions";
@@ -107,6 +117,25 @@
 
     const competitionId = route.params.id as string;
 
+    const isOwner = computed(() => {
+        return (
+            authStore.user &&
+            competitionsStore.currentCompetition?.owner === authStore.user.id
+        );
+    });
+
+    const isMember = computed(() => {
+        if (!authStore.user || !competitionsStore.currentCompetition) return false;
+        return competitionsStore.currentCompetition.members.includes(authStore.user.id);
+    });
+
+    const isOwnerless = computed(() => {
+        return (
+            competitionsStore.currentCompetition &&
+            !competitionsStore.currentCompetition.owner
+        );
+    });
+
     onMounted(async () => {
         try {
             await competitionsStore.fetchCompetitionById(competitionId);
@@ -119,9 +148,9 @@
         return new Date(dateString).toLocaleDateString();
     }
 
-    function getOwnerName(ownerId: string): string {
-        // In a real app, you would fetch user details. For now, show the ID.
-        return ownerId;
+    function getOwnerName(ownerId: string | null): string {
+        // In a real app, you would fetch user details. For now, show the ID or a placeholder.
+        return ownerId || "(no owner)";
     }
 
     function getUsernameById(userId: string): string {
@@ -137,6 +166,34 @@
             snackbarType.value = "success";
             showSnackbar.value = true;
         });
+    }
+
+    async function handleRelinquish() {
+        if (!competitionId) return;
+        try {
+            await competitionsStore.relinquishCompetition(competitionId);
+            snackbarMessage.value = "Ownership relinquished";
+            snackbarType.value = "success";
+            showSnackbar.value = true;
+        } catch (err: any) {
+            snackbarMessage.value = err.response?.data?.error || "Failed to relinquish ownership";
+            snackbarType.value = "error";
+            showSnackbar.value = true;
+        }
+    }
+
+    async function handleClaim() {
+        if (!competitionId) return;
+        try {
+            await competitionsStore.claimOwnership(competitionId);
+            snackbarMessage.value = "You are now the owner";
+            snackbarType.value = "success";
+            showSnackbar.value = true;
+        } catch (err: any) {
+            snackbarMessage.value = err.response?.data?.error || "Failed to claim ownership";
+            snackbarType.value = "error";
+            showSnackbar.value = true;
+        }
     }
 
     async function handleDelete() {

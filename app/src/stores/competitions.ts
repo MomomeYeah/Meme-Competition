@@ -1,18 +1,10 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import * as competitionsApi from "../api/competitions.api";
 
-export interface Competition {
-    id: string;
-    title: string;
-    owner: string;
-    createdAt: string;
-    members: string[];
-}
-
 export const useCompetitionsStore = defineStore("competitions", () => {
-    const userCompetitions = ref<Competition[]>([]);
-    const currentCompetition = ref<Competition | null>(null);
+    const userCompetitions = ref<competitionsApi.Competition[]>([]);
+    const currentCompetition = ref<competitionsApi.Competition | null>(null);
     const loading = ref(false);
     const error = ref<string | null>(null);
 
@@ -103,6 +95,53 @@ export const useCompetitionsStore = defineStore("competitions", () => {
         }
     }
 
+    async function relinquishCompetition(competitionId: string) {
+        loading.value = true;
+        error.value = null;
+        try {
+            const updated = await competitionsApi.relinquishOwnership(competitionId);
+
+            // update stored copies
+            const idx = userCompetitions.value.findIndex((c) => c.id === competitionId);
+            if (idx !== -1) {
+                userCompetitions.value[idx] = updated;
+            }
+            if (currentCompetition.value?.id === competitionId) {
+                currentCompetition.value = updated;
+            }
+
+            return updated;
+        } catch (err: any) {
+            error.value = err.response?.data?.error || "Failed to relinquish ownership";
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
+    async function claimOwnership(competitionId: string) {
+        loading.value = true;
+        error.value = null;
+        try {
+            const updated = await competitionsApi.claimOwnership(competitionId);
+
+            const idx = userCompetitions.value.findIndex((c) => c.id === competitionId);
+            if (idx !== -1) {
+                userCompetitions.value[idx] = updated;
+            }
+            if (currentCompetition.value?.id === competitionId) {
+                currentCompetition.value = updated;
+            }
+
+            return updated;
+        } catch (err: any) {
+            error.value = err.response?.data?.error || "Failed to claim ownership";
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     return {
         userCompetitions,
         currentCompetition,
@@ -113,5 +152,7 @@ export const useCompetitionsStore = defineStore("competitions", () => {
         createCompetition,
         joinCompetition,
         deleteCompetition,
+        relinquishCompetition,
+        claimOwnership,
     };
 });

@@ -66,4 +66,37 @@ export class CompetitionService {
 
         deleteById<Competition>(COMPETITIONS_FILE, competitionId);
     }
+
+    static relinquishOwnership(competitionId: string, requesterId: string): Competition {
+        const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
+        if (!competition) {
+            throw new NotFoundError("Competition not found");
+        }
+        if (competition.owner !== requesterId) {
+            throw new ValidationError("Only the owner can relinquish ownership");
+        }
+        competition.owner = null;
+        updateById<Competition>(COMPETITIONS_FILE, competitionId, {
+            owner: null,
+        });
+        return competition;
+    }
+
+    static claimOwnership(competitionId: string, userId: string): Competition {
+        const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
+        if (!competition) {
+            throw new NotFoundError("Competition not found");
+        }
+        if (competition.owner !== null) {
+            throw new ValidationError("Competition already has an owner");
+        }
+        if (!competition.members.includes(userId)) {
+            throw new ValidationError("Only a member can claim ownership");
+        }
+        competition.owner = userId;
+        updateById<Competition>(COMPETITIONS_FILE, competitionId, {
+            owner: userId,
+        });
+        return competition;
+    }
 }
