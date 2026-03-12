@@ -12,6 +12,7 @@ const S3 = await createS3Client();
 
 // TODO: error handling for all functions
 // TODO: access settings for buckets?
+//  - allow public access to buckets, or something like CloudFront Origin Access Control?
 // TODO: should allow public read and private write
 async function createS3Client() {
     console.log("Creating S3 client...");

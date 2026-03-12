@@ -6,8 +6,8 @@
 
         <v-menu v-if="authStore.user">
             <template #activator="{ props }">
-                <v-btn icon v-bind="props">
-                    <v-icon>mdi-account-circle</v-icon>
+                <v-btn append-icon="mdi-account-circle" v-bind="props">
+                    {{ authStore.user.username }}
                 </v-btn>
             </template>
 
