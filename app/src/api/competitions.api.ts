@@ -64,3 +64,45 @@ export async function getUserCompetitions(userId: string): Promise<Competition[]
     }>(`/competitions`);
     return response.data.data.competitions;
 }
+
+interface UploadResponse {
+    success: boolean;
+    data: {
+        key: string;
+    };
+}
+
+export async function uploadCompetitionFile(
+    competitionId: string,
+    file: File
+): Promise<string> {
+    const form = new FormData();
+    form.append("file", file);
+
+    const response = await apiClient.post<UploadResponse>(
+        `/competitions/${competitionId}/files`,
+        form,
+        {
+            headers: { "Content-Type": "multipart/form-data" },
+        }
+    );
+    return response.data.data.key;
+}
+
+export async function listCompetitionFiles(
+    competitionId: string
+): Promise<string[]> {
+    const response = await apiClient.get<{
+        success: boolean;
+        data: { keys: string[] };
+    }>(`/competitions/${competitionId}/files`);
+    return response.data.data.keys;
+}
+
+export async function deleteCompetitionFile(
+    competitionId: string,
+    key: string
+): Promise<void> {
+    const encoded = encodeURIComponent(key);
+    await apiClient.delete(`/competitions/${competitionId}/files/${encoded}`);
+}

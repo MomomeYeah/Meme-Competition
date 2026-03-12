@@ -82,6 +82,42 @@
                                 </v-btn>
                             </v-col>
                         </v-row>
+
+                        <!-- upload section for members -->
+                        <v-divider class="my-4" />
+                        <div v-if="isMember">
+                            <div class="font-weight-bold mb-2">Upload File</div>
+                            <v-file-input
+                                v-model="selectedFile"
+                                label="Choose a file"
+                                dense
+                                outlined
+                            />
+                            <v-btn
+                                :disabled="!selectedFile || competitionsStore.loading"
+                                color="primary"
+                                class="mt-2"
+                                @click="handleUpload"
+                            >
+                                Upload
+                            </v-btn>
+
+                            <!-- list of uploaded files -->
+                            <v-list v-if="uploadedFiles.length" class="mt-4">
+                                <v-list-item
+                                    v-for="(file, index) in uploadedFiles"
+                                    :key="index"
+                                    :value="file"
+                                >
+                                    <v-list-item-title>{{ file.split("/").pop() }}</v-list-item-title>
+                                    <template v-slot:append>
+                                        <v-btn icon @click="handleDeleteFile(file)">
+                                            <v-icon>mdi-delete</v-icon>
+                                        </v-btn>
+                                    </template>
+                                </v-list-item>
+                            </v-list>
+                        </div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -117,6 +153,9 @@
 
     const competitionId = route.params.id as string;
 
+    const selectedFile = ref<File | null>(null);
+    const uploadedFiles = ref<string[]>([]);
+
     const isOwner = computed(() => {
         return (
             authStore.user &&
@@ -139,6 +178,10 @@
     onMounted(async () => {
         try {
             await competitionsStore.fetchCompetitionById(competitionId);
+            // load user-specific files after competition arrives
+            if (competitionsStore.currentCompetition && authStore.user) {
+                uploadedFiles.value = await competitionsStore.fetchFiles(competitionId);
+            }
         } catch (error) {
             router.push("/dashboard");
         }
@@ -213,6 +256,39 @@
             router.push("/dashboard");
         } catch (err: any) {
             snackbarMessage.value = err.response?.data?.error || "Failed to delete competition";
+            snackbarType.value = "error";
+            showSnackbar.value = true;
+        }
+    }
+
+    async function handleUpload() {
+        if (!selectedFile.value) return;
+        try {
+            const key = await competitionsStore.uploadFile(competitionId, selectedFile.value);
+            snackbarMessage.value = `File uploaded (key: ${key})`;
+            snackbarType.value = "success";
+            showSnackbar.value = true;
+            // clear input
+            selectedFile.value = null;
+            // refresh list
+            uploadedFiles.value = await competitionsStore.fetchFiles(competitionId);
+        } catch (err: any) {
+            snackbarMessage.value = err.response?.data?.error || "Failed to upload file";
+            snackbarType.value = "error";
+            showSnackbar.value = true;
+        }
+    }
+
+    async function handleDeleteFile(key: string) {
+        if (!confirm("Delete this file?")) return;
+        try {
+            await competitionsStore.deleteFile(competitionId, key);
+            snackbarMessage.value = "File deleted";
+            snackbarType.value = "success";
+            showSnackbar.value = true;
+            uploadedFiles.value = uploadedFiles.value.filter((k) => k !== key);
+        } catch (err: any) {
+            snackbarMessage.value = err.response?.data?.error || "Failed to delete file";
             snackbarType.value = "error";
             showSnackbar.value = true;
         }

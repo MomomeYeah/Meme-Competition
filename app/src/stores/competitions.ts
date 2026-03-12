@@ -142,6 +142,48 @@ export const useCompetitionsStore = defineStore("competitions", () => {
         }
     }
 
+    // upload a file for a given competition; returns the s3 key
+    async function uploadFile(competitionId: string, file: File) {
+        loading.value = true;
+        error.value = null;
+        try {
+            const key = await competitionsApi.uploadCompetitionFile(competitionId, file);
+            return key;
+        } catch (err: any) {
+            error.value = err.response?.data?.error || "Failed to upload file";
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
+    async function fetchFiles(competitionId: string) {
+        loading.value = true;
+        error.value = null;
+        try {
+            const keys = await competitionsApi.listCompetitionFiles(competitionId);
+            return keys;
+        } catch (err: any) {
+            error.value = err.response?.data?.error || "Failed to fetch files";
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
+    async function deleteFile(competitionId: string, key: string) {
+        loading.value = true;
+        error.value = null;
+        try {
+            await competitionsApi.deleteCompetitionFile(competitionId, key);
+        } catch (err: any) {
+            error.value = err.response?.data?.error || "Failed to delete file";
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     return {
         userCompetitions,
         currentCompetition,
@@ -154,5 +196,8 @@ export const useCompetitionsStore = defineStore("competitions", () => {
         deleteCompetition,
         relinquishCompetition,
         claimOwnership,
+        uploadFile,
+        fetchFiles,
+        deleteFile,
     };
 });
