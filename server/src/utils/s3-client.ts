@@ -3,7 +3,7 @@ import {
     DeleteObjectCommand,
     ListObjectsCommand,
     PutObjectCommand,
-    S3Client
+    S3Client,
 } from "@aws-sdk/client-s3";
 
 const region = "us-east-1";
@@ -40,7 +40,11 @@ async function createS3Client() {
 export async function uploadFile(fileNamePrefix: string, fileContent: Buffer) {
     // generate random string of length 32 for the file name to avoid collisions
     const generateFileName = () => {
-        return fileNamePrefix + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        return (
+            fileNamePrefix +
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15)
+        );
     };
     const fileName = generateFileName();
 
@@ -48,7 +52,7 @@ export async function uploadFile(fileNamePrefix: string, fileContent: Buffer) {
     const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: fileName,
-        Body: fileContent
+        Body: fileContent,
     });
     await S3.send(command);
 
@@ -59,7 +63,7 @@ export async function uploadFile(fileNamePrefix: string, fileContent: Buffer) {
 export async function getFilesWithPrefix(prefix: string) {
     const command = new ListObjectsCommand({
         Bucket: bucketName,
-        Prefix: prefix
+        Prefix: prefix,
     });
     return await S3.send(command);
 }
@@ -67,7 +71,7 @@ export async function getFilesWithPrefix(prefix: string) {
 export async function deleteFile(fileName: string) {
     const command = new DeleteObjectCommand({
         Bucket: bucketName,
-        Key: fileName
+        Key: fileName,
     });
     await S3.send(command);
 }
@@ -77,7 +81,7 @@ export async function deleteFile(fileName: string) {
 export async function deleteFilesWithPrefix(prefix: string) {
     const listCommand = new ListObjectsCommand({
         Bucket: bucketName,
-        Prefix: prefix
+        Prefix: prefix,
     });
 
     const objects = await S3.send(listCommand);

@@ -72,10 +72,7 @@ interface UploadResponse {
     };
 }
 
-export async function uploadCompetitionFile(
-    competitionId: string,
-    file: File
-): Promise<string> {
+export async function uploadCompetitionFile(competitionId: string, file: File): Promise<string> {
     const form = new FormData();
     form.append("file", file);
 
@@ -89,9 +86,7 @@ export async function uploadCompetitionFile(
     return response.data.data.key;
 }
 
-export async function listCompetitionFiles(
-    competitionId: string
-): Promise<string[]> {
+export async function listCompetitionFiles(competitionId: string): Promise<string[]> {
     const response = await apiClient.get<{
         success: boolean;
         data: { keys: string[] };
@@ -99,10 +94,7 @@ export async function listCompetitionFiles(
     return response.data.data.keys;
 }
 
-export async function deleteCompetitionFile(
-    competitionId: string,
-    key: string
-): Promise<void> {
+export async function deleteCompetitionFile(competitionId: string, key: string): Promise<void> {
     const encoded = encodeURIComponent(key);
     await apiClient.delete(`/competitions/${competitionId}/files/${encoded}`);
 }

@@ -109,7 +109,9 @@
                                     :key="index"
                                     :value="file"
                                 >
-                                    <v-list-item-title>{{ file.split("/").pop() }}</v-list-item-title>
+                                    <v-list-item-title>{{
+                                        file.split("/").pop()
+                                    }}</v-list-item-title>
                                     <template v-slot:append>
                                         <v-btn icon @click="handleDeleteFile(file)">
                                             <v-icon>mdi-delete</v-icon>
@@ -157,10 +159,7 @@
     const uploadedFiles = ref<string[]>([]);
 
     const isOwner = computed(() => {
-        return (
-            authStore.user &&
-            competitionsStore.currentCompetition?.owner === authStore.user.id
-        );
+        return authStore.user && competitionsStore.currentCompetition?.owner === authStore.user.id;
     });
 
     const isMember = computed(() => {
@@ -169,10 +168,7 @@
     });
 
     const isOwnerless = computed(() => {
-        return (
-            competitionsStore.currentCompetition &&
-            !competitionsStore.currentCompetition.owner
-        );
+        return competitionsStore.currentCompetition && !competitionsStore.currentCompetition.owner;
     });
 
     onMounted(async () => {

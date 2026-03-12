@@ -25,18 +25,8 @@ export class CompetitionController {
 
     static async getCompetitionById(req: Request, res: Response): Promise<void> {
         try {
-            // user is guaranteed to exist because of authMiddleware
             const userId = req.user!.userId;
-
-            const { id } = req.params;
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
+            const id = req.params.id as string;
             const competition = CompetitionService.getCompetitionById(id);
 
             // ensure the requesting user is a member
@@ -53,7 +43,6 @@ export class CompetitionController {
 
     static async getUserCompetitions(req: Request, res: Response): Promise<void> {
         try {
-            // user is guaranteed to exist because of authMiddleware
             const userId = req.user!.userId;
             const competitions = CompetitionService.getCompetitionsByMember(userId);
 
@@ -72,16 +61,7 @@ export class CompetitionController {
         try {
             // user is guaranteed to exist because of authMiddleware
             const userId = req.user!.userId;
-
-            const { id } = req.params;
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
+            const id = req.params.id as string;
             const competition = CompetitionService.joinCompetition(id, userId);
 
             res.json({ success: true, data: competition });
@@ -92,18 +72,8 @@ export class CompetitionController {
 
     static async deleteCompetition(req: Request, res: Response): Promise<void> {
         try {
-            // user is guaranteed to exist because of authMiddleware
             const userId = req.user!.userId;
-
-            const { id } = req.params;
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
+            const id = req.params.id as string;
 
             await s3.deleteFilesWithPrefix(id);
             CompetitionService.deleteCompetition(id, userId);
@@ -116,15 +86,7 @@ export class CompetitionController {
     static async relinquishOwnership(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
-            const { id } = req.params;
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
+            const id = req.params.id as string;
 
             const comp = CompetitionService.relinquishOwnership(id, userId);
             res.json({ success: true, data: comp });
@@ -136,15 +98,7 @@ export class CompetitionController {
     static async claimOwnership(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
-            const { id } = req.params;
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
+            const id = req.params.id as string;
 
             const comp = CompetitionService.claimOwnership(id, userId);
             res.json({ success: true, data: comp });
@@ -166,15 +120,7 @@ export class CompetitionController {
     static async uploadFile(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
-            const { id } = req.params;
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
+            const id = req.params.id as string;
 
             const competition = CompetitionService.getCompetitionById(id);
             if (!competition.members.includes(userId)) {
@@ -203,15 +149,7 @@ export class CompetitionController {
     static async listFiles(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
-            const { id } = req.params;
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
+            const id = req.params.id as string;
 
             const competition = CompetitionService.getCompetitionById(id);
             if (!competition.members.includes(userId)) {
@@ -238,20 +176,8 @@ export class CompetitionController {
     static async deleteUserFile(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
-            const { id, fileId } = req.params;
-
-            if (!id) {
-                res.status(400).json({ success: false, error: "Competition ID is required" });
-                return;
-            }
-            if (typeof id !== "string" || id.trim().length === 0) {
-                res.status(400).json({ success: false, error: "Invalid competition ID" });
-                return;
-            }
-            if (!fileId || typeof fileId !== "string") {
-                res.status(400).json({ success: false, error: "File ID is required" });
-                return;
-            }
+            const id = req.params.id as string;
+            const fileId = req.params.fileId as string;
 
             const competition = CompetitionService.getCompetitionById(id);
             if (!competition.members.includes(userId)) {
@@ -262,7 +188,10 @@ export class CompetitionController {
             const decodedKey = decodeURIComponent(fileId);
             const prefix = `${id}/${userId}`;
             if (!decodedKey.startsWith(prefix)) {
-                res.status(403).json({ success: false, error: "Cannot delete file you do not own" });
+                res.status(403).json({
+                    success: false,
+                    error: "Cannot delete file you do not own",
+                });
                 return;
             }
 
