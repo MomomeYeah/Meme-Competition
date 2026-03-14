@@ -105,13 +105,16 @@
                             <!-- list of uploaded files -->
                             <v-list v-if="uploadedFiles.length" class="mt-4">
                                 <v-list-item
-                                    v-for="(file, index) in uploadedFiles"
-                                    :key="index"
+                                    v-for="file in uploadedFiles"
+                                    :key="file.id"
                                     :value="file"
+                                    :active="false"
+                                    @click="openPreview(file)"
                                 >
-                                    <v-list-item-title>{{
-                                        file.split("/").pop()
-                                    }}</v-list-item-title>
+                                    <v-list-item-title>{{ file.name }}</v-list-item-title>
+                                    <v-list-item-subtitle>
+                                        Uploaded: {{ formatDate(file.uploadedAt) }}
+                                    </v-list-item-subtitle>
                                     <template v-slot:append>
                                         <v-btn icon @click="handleDeleteFile(file)">
                                             <v-icon>mdi-delete</v-icon>
@@ -119,6 +122,29 @@
                                     </template>
                                 </v-list-item>
                             </v-list>
+
+                            <v-dialog v-model="showPreview" max-width="800">
+                                <v-card>
+                                    <!-- <v-card-title class="justify-space-between"> -->
+                                    <v-card-title
+                                        class="flex flex-row items-center justify-between"
+                                    >
+                                        <span>{{ selectedPreview?.name }}</span>
+                                        <v-btn icon @click="closePreview">
+                                            <v-icon>mdi-close</v-icon>
+                                        </v-btn>
+                                    </v-card-title>
+                                    <v-card-text>
+                                        <v-img
+                                            v-if="selectedPreview"
+                                            :src="selectedPreview.url"
+                                            :alt="selectedPreview.name"
+                                            max-height="600"
+                                            contain
+                                        />
+                                    </v-card-text>
+                                </v-card>
+                            </v-dialog>
                         </div>
                     </v-card-text>
                 </v-card>
@@ -143,6 +169,7 @@
     import { useRoute, useRouter } from "vue-router";
     import { useAuthStore } from "../stores/auth";
     import { useCompetitionsStore } from "../stores/competitions";
+    import type * as competitionsApi from "../api/competitions.api";
 
     const router = useRouter();
     const route = useRoute();
@@ -156,7 +183,9 @@
     const competitionId = route.params.id as string;
 
     const selectedFile = ref<File | null>(null);
-    const uploadedFiles = ref<string[]>([]);
+    const uploadedFiles = ref<competitionsApi.CompetitionFile[]>([]);
+    const selectedPreview = ref<competitionsApi.CompetitionFile | null>(null);
+    const showPreview = ref(false);
 
     const isOwner = computed(() => {
         return authStore.user && competitionsStore.currentCompetition?.owner === authStore.user.id;
@@ -257,16 +286,24 @@
         }
     }
 
+    function openPreview(file: competitionsApi.CompetitionFile) {
+        selectedPreview.value = file;
+        showPreview.value = true;
+    }
+
+    function closePreview() {
+        showPreview.value = false;
+        selectedPreview.value = null;
+    }
+
     async function handleUpload() {
         if (!selectedFile.value) return;
         try {
-            const key = await competitionsStore.uploadFile(competitionId, selectedFile.value);
-            snackbarMessage.value = `File uploaded (key: ${key})`;
+            await competitionsStore.uploadFile(competitionId, selectedFile.value);
+            snackbarMessage.value = "File uploaded";
             snackbarType.value = "success";
             showSnackbar.value = true;
-            // clear input
             selectedFile.value = null;
-            // refresh list
             uploadedFiles.value = await competitionsStore.fetchFiles(competitionId);
         } catch (err: any) {
             snackbarMessage.value = err.response?.data?.error || "Failed to upload file";
@@ -275,14 +312,14 @@
         }
     }
 
-    async function handleDeleteFile(key: string) {
+    async function handleDeleteFile(file: competitionsApi.CompetitionFile) {
         if (!confirm("Delete this file?")) return;
         try {
-            await competitionsStore.deleteFile(competitionId, key);
+            await competitionsStore.deleteFile(competitionId, file.id);
             snackbarMessage.value = "File deleted";
             snackbarType.value = "success";
             showSnackbar.value = true;
-            uploadedFiles.value = uploadedFiles.value.filter((k) => k !== key);
+            uploadedFiles.value = uploadedFiles.value.filter((f) => f.id !== file.id);
         } catch (err: any) {
             snackbarMessage.value = err.response?.data?.error || "Failed to delete file";
             snackbarType.value = "error";

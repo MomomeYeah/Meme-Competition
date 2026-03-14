@@ -1,5 +1,13 @@
 import apiClient from "./client";
 
+export interface CompetitionFile {
+    id: string;
+    name: string;
+    uploadedAt: string;
+    rating: number | null;
+    url: string;
+}
+
 export interface Competition {
     id: string;
     title: string;
@@ -7,6 +15,7 @@ export interface Competition {
     owner: string | null;
     createdAt: string;
     members: string[];
+    files?: CompetitionFile[];
 }
 
 export async function getCompetitionById(id: string): Promise<Competition> {
@@ -68,11 +77,14 @@ export async function getUserCompetitions(userId: string): Promise<Competition[]
 interface UploadResponse {
     success: boolean;
     data: {
-        key: string;
+        file: CompetitionFile;
     };
 }
 
-export async function uploadCompetitionFile(competitionId: string, file: File): Promise<string> {
+export async function uploadCompetitionFile(
+    competitionId: string,
+    file: File
+): Promise<CompetitionFile> {
     const form = new FormData();
     form.append("file", file);
 
@@ -83,18 +95,18 @@ export async function uploadCompetitionFile(competitionId: string, file: File): 
             headers: { "Content-Type": "multipart/form-data" },
         }
     );
-    return response.data.data.key;
+    return response.data.data.file;
 }
 
-export async function listCompetitionFiles(competitionId: string): Promise<string[]> {
+export async function listCompetitionFiles(competitionId: string): Promise<CompetitionFile[]> {
     const response = await apiClient.get<{
         success: boolean;
-        data: { keys: string[] };
+        data: { files: CompetitionFile[] };
     }>(`/competitions/${competitionId}/files`);
-    return response.data.data.keys;
+    return response.data.data.files;
 }
 
-export async function deleteCompetitionFile(competitionId: string, key: string): Promise<void> {
-    const encoded = encodeURIComponent(key);
+export async function deleteCompetitionFile(competitionId: string, fileId: string): Promise<void> {
+    const encoded = encodeURIComponent(fileId);
     await apiClient.delete(`/competitions/${competitionId}/files/${encoded}`);
 }

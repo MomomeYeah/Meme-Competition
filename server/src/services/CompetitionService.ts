@@ -34,14 +34,14 @@ export class CompetitionService {
         return updateById<Competition>(COMPETITIONS_FILE, competitionId, { files })!;
     }
 
-    static removeFileFromCompetitionByS3Key(competitionId: string, s3Key: string): Competition {
+    static removeFileFromCompetition(competitionId: string, fileId: string): Competition {
         const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
         if (!competition) {
             throw new NotFoundError("Competition not found");
         }
 
         const files = competition.files ?? [];
-        const updatedFiles = files.filter((file) => file.s3Key !== s3Key);
+        const updatedFiles = files.filter((file) => file.id !== fileId);
 
         return updateById<Competition>(COMPETITIONS_FILE, competitionId, { files: updatedFiles })!;
     }

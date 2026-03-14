@@ -147,8 +147,8 @@ export const useCompetitionsStore = defineStore("competitions", () => {
         loading.value = true;
         error.value = null;
         try {
-            const key = await competitionsApi.uploadCompetitionFile(competitionId, file);
-            return key;
+            const fileResponse = await competitionsApi.uploadCompetitionFile(competitionId, file);
+            return fileResponse;
         } catch (err: any) {
             error.value = err.response?.data?.error || "Failed to upload file";
             throw err;
@@ -161,8 +161,8 @@ export const useCompetitionsStore = defineStore("competitions", () => {
         loading.value = true;
         error.value = null;
         try {
-            const keys = await competitionsApi.listCompetitionFiles(competitionId);
-            return keys;
+            const files = await competitionsApi.listCompetitionFiles(competitionId);
+            return files;
         } catch (err: any) {
             error.value = err.response?.data?.error || "Failed to fetch files";
             throw err;
@@ -171,11 +171,11 @@ export const useCompetitionsStore = defineStore("competitions", () => {
         }
     }
 
-    async function deleteFile(competitionId: string, key: string) {
+    async function deleteFile(competitionId: string, fileId: string) {
         loading.value = true;
         error.value = null;
         try {
-            await competitionsApi.deleteCompetitionFile(competitionId, key);
+            await competitionsApi.deleteCompetitionFile(competitionId, fileId);
         } catch (err: any) {
             error.value = err.response?.data?.error || "Failed to delete file";
             throw err;

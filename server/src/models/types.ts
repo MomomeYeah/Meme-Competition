@@ -6,6 +6,14 @@ export interface User {
     createdAt: string;
 }
 
+export interface CompetitionUserFile {
+    id: string;
+    name: string;
+    uploadedAt: string;
+    rating: number | null;
+    url: string;
+}
+
 export interface CompetitionFile {
     id: string;
     name: string;

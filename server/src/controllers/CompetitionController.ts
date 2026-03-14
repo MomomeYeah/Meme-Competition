@@ -1,6 +1,6 @@
 import { type Request, type Response } from "express";
 import { CompetitionService } from "../services/CompetitionService";
-import { type ApiResponse } from "../models/types";
+import { type ApiResponse, type CompetitionUserFile } from "../models/types";
 import { generateId } from "../utils/generate-id";
 import * as s3 from "../utils/s3-client";
 
@@ -108,6 +108,7 @@ export class CompetitionController {
         }
     }
 
+    // TODO: lambda function to generate thumbnail images for UI
     static async uploadFile(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
@@ -157,16 +158,20 @@ export class CompetitionController {
                 return;
             }
 
-            const prefix = `${id}/${userId}`;
-            const response = await s3.getFilesWithPrefix(prefix);
-            const keys: string[] = [];
-            if (response.Contents) {
-                for (const obj of response.Contents) {
-                    if (obj.Key) keys.push(obj.Key);
+            const userFiles: CompetitionUserFile[] = [];
+            for (const file of competition.files ?? []) {
+                if (file.uploaderId === userId) {
+                    userFiles.push({
+                        id: file.id,
+                        name: file.name,
+                        uploadedAt: file.uploadedAt,
+                        rating: file.rating,
+                        url: s3.getFileUrl(file.s3Key),
+                    });
                 }
             }
 
-            res.json({ success: true, data: { keys } });
+            res.json({ success: true, data: { files: userFiles } });
         } catch (error) {
             CompetitionController.handleError(error, res);
         }
@@ -185,9 +190,14 @@ export class CompetitionController {
                 return;
             }
 
-            const decodedKey = decodeURIComponent(fileId);
-            const prefix = `${id}/${userId}`;
-            if (!decodedKey.startsWith(prefix)) {
+            const decodedFileId = decodeURIComponent(fileId);
+            const file = competition.files.find((f) => f.id === decodedFileId);
+            if (!file) {
+                res.status(404).json({ success: false, error: "File not found" });
+                return;
+            }
+
+            if (file.uploaderId !== userId) {
                 res.status(403).json({
                     success: false,
                     error: "Cannot delete file you do not own",
@@ -195,8 +205,8 @@ export class CompetitionController {
                 return;
             }
 
-            await s3.deleteFile(decodedKey);
-            CompetitionService.removeFileFromCompetitionByS3Key(id, decodedKey);
+            await s3.deleteFile(file.s3Key);
+            CompetitionService.removeFileFromCompetition(id, fileId);
             res.json({ success: true });
         } catch (error) {
             CompetitionController.handleError(error, res);

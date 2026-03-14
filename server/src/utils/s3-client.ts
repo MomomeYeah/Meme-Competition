@@ -6,8 +6,18 @@ import {
     S3Client,
 } from "@aws-sdk/client-s3";
 
-const region = "us-east-1";
+const s3_region = process.env.S3_REGION || "us-east-1";
+const s3_domain = process.env.S3_DOMAIN || `amazonaws.com`;
+const s3_protocol = process.env.S3_PROTOCOL || "https";
+
+// S3 connection URL
+const s3_url = `${s3_protocol}://s3.${s3_region}.${s3_domain}`;
+
+// S3 object URL including bucket name
 const bucketName = "meme-competition";
+const s3_file_prefix = `${s3_protocol}://${bucketName}.s3.${s3_region}.${s3_domain}/`;
+
+// S3 connection client
 const S3 = await createS3Client();
 
 // TODO: error handling for all functions
@@ -18,15 +28,15 @@ async function createS3Client() {
     console.log("Creating S3 client...");
     let s3Client: S3Client;
     if (process.env.NODE_ENV === "production") {
-        s3Client = new S3Client({ region: region });
+        s3Client = new S3Client({ region: s3_region });
     } else {
         console.warn("Using local S3 client for development");
         s3Client = new S3Client({
-            region: region,
-            endpoint: `http://localhost.localstack.cloud:4566`,
+            region: s3_region,
+            endpoint: s3_url,
             credentials: {
-                accessKeyId: "test",
-                secretAccessKey: "test",
+                accessKeyId: process.env.S3_ACCESS_KEY_ID || "test",
+                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "test",
             },
             forcePathStyle: true,
         });
@@ -61,14 +71,6 @@ export async function uploadFile(fileNamePrefix: string, fileContent: Buffer) {
     return fileName;
 }
 
-export async function getFilesWithPrefix(prefix: string) {
-    const command = new ListObjectsCommand({
-        Bucket: bucketName,
-        Prefix: prefix,
-    });
-    return await S3.send(command);
-}
-
 export async function deleteFile(fileName: string) {
     const command = new DeleteObjectCommand({
         Bucket: bucketName,
@@ -93,4 +95,9 @@ export async function deleteFilesWithPrefix(prefix: string) {
             }
         }
     }
+}
+
+export function getFileUrl(fileName: string) {
+    const fileUrl = `${s3_file_prefix}${fileName}`;
+    return fileUrl;
 }
