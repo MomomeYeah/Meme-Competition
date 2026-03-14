@@ -1,10 +1,7 @@
 import { Router } from "express";
-import multer from "multer";
 import { CompetitionController } from "../controllers/CompetitionController";
 import { authMiddleware } from "../middleware/auth";
-
-// multer setup for memory storage
-const upload = multer({ storage: multer.memoryStorage() });
+import { fileUploadMiddleware, fileValidationMiddleware } from "../middleware/file";
 
 const router = Router();
 
@@ -20,7 +17,13 @@ router.post("/:id/claim", authMiddleware, CompetitionController.claimOwnership);
 router.get("/:id/files", authMiddleware, CompetitionController.listFiles);
 
 // upload arbitrary file for competition members (multipart/form-data)
-router.post("/:id/files", authMiddleware, upload.single("file"), CompetitionController.uploadFile);
+router.post(
+    "/:id/files",
+    authMiddleware,
+    fileUploadMiddleware.single("file"),
+    fileValidationMiddleware,
+    CompetitionController.uploadFile
+);
 
 // delete a file belonging to current user
 // fileId is the full S3 key (URL-encoded)

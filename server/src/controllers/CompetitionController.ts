@@ -135,9 +135,8 @@ export class CompetitionController {
                 return;
             }
 
-            const buffer = file.buffer as Buffer;
             // prefix with competition id and user id to help organization
-            const key = await s3.uploadFile(`${id}/${userId}/`, buffer);
+            const key = await s3.uploadFile(`${id}/${userId}/`, file.buffer);
 
             res.json({ success: true, data: { key } });
         } catch (error) {

@@ -1,6 +1,7 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import multer from 'multer';
 import 'dotenv/config';
 
 import authRoutes from './src/routes/auth.routes';
@@ -30,9 +31,19 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
   if (err instanceof AppError) {
     res.status(err.statusCode).json({ success: false, error: err.message });
-  } else {
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    return;
   }
+
+  // Multer file upload errors (size, file type, etc.)
+  if (err instanceof multer.MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'File size exceeds 1MB limit'
+      : err.message;
+    res.status(400).json({ success: false, error: message });
+    return;
+  }
+
+  res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
 // 404 handler
