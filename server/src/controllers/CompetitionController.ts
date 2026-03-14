@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { CompetitionService } from "../services/CompetitionService";
 import { type ApiResponse } from "../models/types";
+import { generateId } from "../utils/generate-id";
 import * as s3 from "../utils/s3-client";
 
 export class CompetitionController {
@@ -107,16 +108,6 @@ export class CompetitionController {
         }
     }
 
-    // allow members of a competition to upload a file to S3
-    // TODO: what metadata do we need to keep per file?
-    //  - ID
-    //  - filename
-    //  - file type
-    //  - S3 key
-    //  - uploader user ID
-    //  - competition ID
-    //  - upload timestamp
-    //  - rating
     static async uploadFile(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
@@ -138,7 +129,17 @@ export class CompetitionController {
             // prefix with competition id and user id to help organization
             const key = await s3.uploadFile(`${id}/${userId}/`, file.buffer);
 
-            res.json({ success: true, data: { key } });
+            const fileEntry = {
+                id: generateId(),
+                name: file.originalname,
+                uploaderId: userId,
+                uploadedAt: new Date().toISOString(),
+                rating: null,
+                s3Key: key,
+            };
+            CompetitionService.addFileToCompetition(id, fileEntry);
+
+            res.json({ success: true, data: { file: fileEntry } });
         } catch (error) {
             CompetitionController.handleError(error, res);
         }
@@ -195,6 +196,7 @@ export class CompetitionController {
             }
 
             await s3.deleteFile(decodedKey);
+            CompetitionService.removeFileFromCompetitionByS3Key(id, decodedKey);
             res.json({ success: true });
         } catch (error) {
             CompetitionController.handleError(error, res);

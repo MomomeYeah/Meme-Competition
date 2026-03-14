@@ -1,4 +1,4 @@
-import { type Competition } from "../models/types";
+import { type Competition, type CompetitionFile } from "../models/types";
 import { findById, filterByProperty, create, updateById, deleteById } from "../utils/json-db";
 import { ValidationError, NotFoundError } from "../utils/errors";
 import { generateId } from "../utils/generate-id";
@@ -17,9 +17,33 @@ export class CompetitionService {
             owner: ownerId,
             createdAt: new Date().toISOString(),
             members: [ownerId],
+            files: [],
         };
 
         return create(COMPETITIONS_FILE, competition);
+    }
+
+    static addFileToCompetition(competitionId: string, file: CompetitionFile): Competition {
+        const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
+        if (!competition) {
+            throw new NotFoundError("Competition not found");
+        }
+
+        const files = competition.files ?? [];
+        files.push(file);
+        return updateById<Competition>(COMPETITIONS_FILE, competitionId, { files })!;
+    }
+
+    static removeFileFromCompetitionByS3Key(competitionId: string, s3Key: string): Competition {
+        const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
+        if (!competition) {
+            throw new NotFoundError("Competition not found");
+        }
+
+        const files = competition.files ?? [];
+        const updatedFiles = files.filter((file) => file.s3Key !== s3Key);
+
+        return updateById<Competition>(COMPETITIONS_FILE, competitionId, { files: updatedFiles })!;
     }
 
     static getCompetitionById(id: string): Competition {

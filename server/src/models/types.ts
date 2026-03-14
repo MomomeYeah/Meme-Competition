@@ -6,6 +6,15 @@ export interface User {
     createdAt: string;
 }
 
+export interface CompetitionFile {
+    id: string;
+    name: string;
+    uploaderId: string;
+    uploadedAt: string;
+    rating: number | null;
+    s3Key: string;
+}
+
 export interface Competition {
     id: string;
     title: string;
@@ -13,6 +22,7 @@ export interface Competition {
     owner: string | null;
     createdAt: string;
     members: string[];
+    files: CompetitionFile[];
 }
 
 export interface JwtPayload {
