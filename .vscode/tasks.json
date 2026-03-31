@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Server",
+            "type": "shell",
+            "command": "bun dev",
+            "options": { "cwd": "${workspaceFolder}/server" },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "App",
+            "type": "shell",
+            "command": "bun dev",
+            "options": { "cwd": "${workspaceFolder}/app" },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Start All",
+            "dependsOn": ["Server", "App"],
+            "dependsOrder": "parallel",
+            "type": "shell",
+            "command": "echo Started both server and app",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
