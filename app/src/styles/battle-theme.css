@@ -2,18 +2,55 @@
 
 /* ─── Design Tokens ──────────────────────────────────────────── */
 :root {
+    /* Core palette */
     --bt-primary: #00f5ff;
+    --bt-primary-container: #00ffff;
+    --bt-on-primary-container: #005d5d;
     --bt-neon-purple: #a020f0;
+    --bt-secondary: #afefdd;
+    --bt-secondary-container: #0b5345;
+    --bt-on-secondary-container: #a1e1cf;
+    --bt-tertiary: #c1ff9b;
+    --bt-tertiary-container: #6ffe00;
+    --bt-on-tertiary-container: #245c00;
+    --bt-error: #ff716c;
+    --bt-error-dim: #d7383b;
+
+    /* Surfaces */
     --bt-deep: #0a0c10;
+    --bt-surface: #0b0f0f;
+    --bt-surface-container-lowest: #000000;
+    --bt-surface-container-low: #101414;
+    --bt-surface-container: #151b1a;
+    --bt-surface-container-high: #1b2121;
+    --bt-surface-container-highest: #212727;
+    --bt-surface-bright: #272d2d;
     --bt-slate: #151921;
     --bt-metal: #1e2530;
-    --bt-on-surface: #f1f5f9;
+
+    /* Text */
+    --bt-on-surface: #fafdfc;
+    --bt-on-surface-variant: #a8acab;
     --bt-muted: #475569;
     --bt-muted-dark: #334155;
+    --bt-outline: #727676;
+    --bt-outline-variant: #454948;
 
+    /* Fonts */
     --bt-font-headline: "Space Grotesk", sans-serif;
     --bt-font-body: "Inter", sans-serif;
     --bt-font-label: "JetBrains Mono", monospace;
+
+    /* Shell dimensions */
+    --bt-header-height: 64px;
+    --bt-sidebar-width: 256px;
+}
+
+/* ─── Global Shell ───────────────────────────────────────────── */
+body,
+.v-application {
+    background-color: var(--bt-surface) !important;
+    color: var(--bt-on-surface) !important;
 }
 
 /* ─── Full-Screen Page ───────────────────────────────────────── */
@@ -346,4 +383,28 @@
 
 .bt-status-key {
     color: rgba(0, 245, 255, 0.4);
+}
+
+/* ─── App Shell ──────────────────────────────────────────────── */
+.app-shell {
+    min-height: 100vh;
+    background: var(--bt-surface);
+    color: var(--bt-on-surface);
+    font-family: var(--bt-font-body);
+}
+
+.app-content {
+    padding-top: var(--bt-header-height);
+    min-height: 100vh;
+}
+
+.app-content.has-sidebar {
+    margin-left: var(--bt-sidebar-width);
+}
+
+@media (max-width: 839px) {
+    .app-content.has-sidebar {
+        margin-left: 0;
+        padding-bottom: 72px;
+    }
 }
