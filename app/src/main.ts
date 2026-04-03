@@ -17,6 +17,7 @@ import App from "./App.vue";
 import "unfonts.css";
 import "./styles/tailwind.css";
 import "./styles/main.scss";
+import "./styles/battle-theme.css";
 
 const app = createApp(App);
 
