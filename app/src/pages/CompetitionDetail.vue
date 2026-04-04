@@ -141,8 +141,8 @@
                         </template>
                     </section>
 
-                    <!-- My Submissions (members only, hidden during active battle) -->
-                    <section v-if="isMember && effectiveBattleStatus !== 'active'" class="section">
+                    <!-- My Submissions (members only, lobby only) -->
+                    <section v-if="isMember && effectiveBattleStatus === 'idle'" class="section">
                         <div class="section-header">
                             <h2 class="section-title">My Submissions</h2>
                             <span class="section-count">
@@ -279,11 +279,17 @@
                                 <i class="mdi mdi-sword-cross"></i>
                                 {{ startingBattle ? 'Starting...' : 'Start the Battle' }}
                             </button>
-                            <button class="action-btn" type="button" @click="copyShareLink">
+                            <button
+                                v-if="effectiveBattleStatus === 'idle'"
+                                class="action-btn"
+                                type="button"
+                                @click="copyShareLink"
+                            >
                                 <i class="mdi mdi-link-variant"></i>
                                 Copy Invite Link
                             </button>
                             <button
+                                v-if="effectiveBattleStatus === 'idle'"
                                 class="action-btn action-btn-warning"
                                 type="button"
                                 :disabled="competitionsStore.loading"
@@ -305,7 +311,7 @@
                     </div>
 
                     <!-- Claim ownership -->
-                    <div v-else-if="isMember && isOwnerless" class="side-section">
+                    <div v-else-if="isMember && isOwnerless && effectiveBattleStatus === 'idle'" class="side-section">
                         <h3 class="side-title">Ownership</h3>
                         <p class="side-note">This battle has no owner.</p>
                         <button

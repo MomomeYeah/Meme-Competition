@@ -30,6 +30,9 @@ export class CompetitionService {
         if (!competition) {
             throw new NotFoundError("Competition not found");
         }
+        if (competition.battle?.status === 'active' || competition.battle?.status === 'complete') {
+            throw new ValidationError("Cannot upload entries once the battle has started");
+        }
 
         const files = competition.files ?? [];
         files.push(file);
@@ -102,6 +105,9 @@ export class CompetitionService {
         if (competition.owner !== requesterId) {
             throw new ValidationError("Only the owner can relinquish ownership");
         }
+        if (competition.battle?.status === 'active' || competition.battle?.status === 'complete') {
+            throw new ValidationError("Cannot relinquish ownership once the battle has started");
+        }
         competition.owner = null;
         updateById<Competition>(COMPETITIONS_FILE, competitionId, {
             owner: null,
@@ -119,6 +125,9 @@ export class CompetitionService {
         }
         if (!competition.members.includes(userId)) {
             throw new ValidationError("Only a member can claim ownership");
+        }
+        if (competition.battle?.status === 'active' || competition.battle?.status === 'complete') {
+            throw new ValidationError("Cannot claim ownership once the battle has started");
         }
         competition.owner = userId;
         updateById<Competition>(COMPETITIONS_FILE, competitionId, {
