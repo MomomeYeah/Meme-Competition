@@ -1,0 +1,405 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+/* ─── Design Tokens ──────────────────────────────────────────── */
+:root {
+    /* Core palette */
+    --bt-primary: #00f5ff;
+    --bt-primary-container: #00ffff;
+    --bt-on-primary-container: #005d5d;
+    --bt-secondary: #afefdd;
+    --bt-secondary-container: #0b5345;
+    --bt-on-secondary-container: #a1e1cf;
+    --bt-tertiary: #c1ff9b;
+    --bt-tertiary-container: #6ffe00;
+    --bt-on-tertiary-container: #245c00;
+    --bt-error: #ff716c;
+    --bt-error-dim: #d7383b;
+
+    /* Surfaces */
+    --bt-deep: #0a0c10;
+    --bt-surface: #0b0f0f;
+    --bt-surface-container-low: #101414;
+    --bt-surface-container: #151b1a;
+    --bt-surface-container-high: #1b2121;
+    --bt-surface-container-highest: #212727;
+
+    /* Text */
+    --bt-on-surface: #fafdfc;
+    --bt-on-surface-variant: #a8acab;
+    --bt-muted: #475569;
+    --bt-muted-dark: #334155;
+    --bt-outline: #727676;
+    --bt-outline-variant: #454948;
+
+    /* Fonts */
+    --bt-font-headline: "Space Grotesk", sans-serif;
+    --bt-font-body: "Inter", sans-serif;
+    --bt-font-label: "JetBrains Mono", monospace;
+
+    /* Shell dimensions */
+    --bt-header-height: 64px;
+    --bt-sidebar-width: 256px;
+}
+
+/* ─── Global Shell ───────────────────────────────────────────── */
+body,
+.v-application {
+    background-color: var(--bt-surface) !important;
+    color: var(--bt-on-surface) !important;
+}
+
+/* ─── Full-Screen Page ───────────────────────────────────────── */
+.bt-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background-color: var(--bt-deep);
+    background-image: radial-gradient(
+        circle at 50% 50%,
+        rgba(0, 245, 255, 0.05) 0%,
+        transparent 100%
+    );
+    color: var(--bt-on-surface);
+    font-family: var(--bt-font-body);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ─── Background Decorations ─────────────────────────────────── */
+.bt-grid-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    background-image:
+        linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.bt-top-line {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.4), transparent);
+}
+
+.bt-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, transparent 20%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+/* ─── Console Frame ──────────────────────────────────────────── */
+.bt-console-frame {
+    border: 2px solid rgba(0, 245, 255, 0.8);
+    background: rgba(21, 25, 33, 0.4);
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0, 245, 255, 0.15);
+}
+
+.bt-scanner-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 1px;
+    width: 100%;
+    pointer-events: none;
+    opacity: 0.3;
+    background: linear-gradient(90deg, transparent, var(--bt-primary), transparent);
+}
+
+.bt-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(0, 245, 255, 0.2);
+    background: rgba(0, 245, 255, 0.05);
+    font-family: var(--bt-font-label);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--bt-primary);
+}
+
+.bt-panel-header .mdi {
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* ─── Tab Toggle ─────────────────────────────────────────────── */
+.bt-tab-toggle {
+    display: flex;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px;
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    margin-bottom: 1.25rem;
+}
+
+.bt-tab-btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-family: var(--bt-font-label);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    color: rgba(0, 245, 255, 0.6);
+}
+
+.bt-tab-btn:hover {
+    color: var(--bt-primary);
+}
+
+.bt-tab-btn.bt-tab-active {
+    background: var(--bt-primary);
+    color: var(--bt-deep);
+    font-weight: 700;
+}
+
+/* ─── Social Buttons ─────────────────────────────────────────── */
+.bt-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--bt-on-surface);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--bt-font-label);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.bt-social-btn:hover {
+    border-color: rgba(160, 32, 240, 0.4);
+    background: rgba(160, 32, 240, 0.05);
+}
+
+.bt-social-btn:active {
+    transform: scale(0.98);
+}
+
+.bt-social-btn .mdi {
+    font-size: 18px;
+    line-height: 1;
+    color: rgba(0, 245, 255, 0.7);
+    display: flex;
+    align-items: center;
+}
+
+/* ─── Divider ────────────────────────────────────────────────── */
+.bt-manual-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.bt-divider-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.bt-divider-label {
+    font-family: var(--bt-font-label);
+    font-size: 8px;
+    color: var(--bt-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4em;
+    white-space: nowrap;
+}
+
+/* ─── Form Fields ────────────────────────────────────────────── */
+.bt-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bt-field-label {
+    font-family: var(--bt-font-label);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(0, 245, 255, 0.6);
+    margin-left: 4px;
+}
+
+.bt-field-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.bt-field-accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: rgba(0, 245, 255, 0.2);
+    transition: background 0.2s;
+    pointer-events: none;
+}
+
+.bt-field-wrapper:focus-within .bt-field-accent {
+    background: var(--bt-primary);
+}
+
+.bt-field-wrapper.bt-field-error-state .bt-field-accent {
+    background: #ef4444;
+}
+
+.bt-field-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bt-muted);
+    font-size: 18px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.bt-field-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: none;
+    outline: none;
+    color: var(--bt-on-surface);
+    font-family: var(--bt-font-label);
+    font-size: 12px;
+}
+
+.bt-field-input::placeholder {
+    color: var(--bt-muted-dark);
+}
+
+.bt-field-error-msg {
+    font-family: var(--bt-font-label);
+    font-size: 9px;
+    color: #f87171;
+    letter-spacing: 0.1em;
+    margin-left: 4px;
+}
+
+/* ─── Auth Error Alert ───────────────────────────────────────── */
+.bt-auth-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    padding: 0.75rem 1rem;
+    font-family: var(--bt-font-label);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.25rem;
+}
+
+/* ─── Submit Button ──────────────────────────────────────────── */
+.bt-submit-btn {
+    width: 100%;
+    padding: 1.25rem;
+    background: var(--bt-primary);
+    color: var(--bt-deep);
+    font-family: var(--bt-font-headline);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.3s;
+    box-shadow: 0 0 25px rgba(0, 245, 255, 0.2);
+}
+
+.bt-submit-btn:hover:not(:disabled) {
+    background: #ffffff;
+}
+
+.bt-submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.bt-submit-btn .mdi {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* ─── Status Bar ─────────────────────────────────────────────── */
+.bt-status-bar {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    font-family: var(--bt-font-label);
+    font-size: 8px;
+    color: var(--bt-muted-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    opacity: 0.6;
+    z-index: 10;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.bt-status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bt-status-key {
+    color: rgba(0, 245, 255, 0.4);
+}
+
+/* ─── App Shell ──────────────────────────────────────────────── */
+.app-shell {
+    min-height: 100vh;
+    background: var(--bt-surface);
+    color: var(--bt-on-surface);
+    font-family: var(--bt-font-body);
+}
+
+.app-content {
+    padding-top: var(--bt-header-height);
+    min-height: 100vh;
+}
+
+.app-content.has-sidebar {
+    margin-left: var(--bt-sidebar-width);
+}
+
+@media (max-width: 839px) {
+    .app-content.has-sidebar {
+        margin-left: 0;
+        padding-bottom: 72px;
+    }
+}

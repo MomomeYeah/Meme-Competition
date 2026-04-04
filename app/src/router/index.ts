@@ -10,7 +10,6 @@ import { useAuthStore } from "@/stores/auth";
 
 // Pages
 import Login from "@/pages/Login.vue";
-import Register from "@/pages/Register.vue";
 import Dashboard from "@/pages/Dashboard.vue";
 import CreateCompetition from "@/pages/CreateCompetition.vue";
 import CompetitionDetail from "@/pages/CompetitionDetail.vue";
@@ -26,7 +25,7 @@ const routes: RouteRecordRaw[] = [
     {
         path: "/register",
         name: "Register",
-        component: Register,
+        component: Login,
         meta: { requiresAuth: false },
     },
     {
