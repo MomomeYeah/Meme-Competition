@@ -6,7 +6,6 @@
     --bt-primary: #00f5ff;
     --bt-primary-container: #00ffff;
     --bt-on-primary-container: #005d5d;
-    --bt-neon-purple: #a020f0;
     --bt-secondary: #afefdd;
     --bt-secondary-container: #0b5345;
     --bt-on-secondary-container: #a1e1cf;
@@ -19,14 +18,10 @@
     /* Surfaces */
     --bt-deep: #0a0c10;
     --bt-surface: #0b0f0f;
-    --bt-surface-container-lowest: #000000;
     --bt-surface-container-low: #101414;
     --bt-surface-container: #151b1a;
     --bt-surface-container-high: #1b2121;
     --bt-surface-container-highest: #212727;
-    --bt-surface-bright: #272d2d;
-    --bt-slate: #151921;
-    --bt-metal: #1e2530;
 
     /* Text */
     --bt-on-surface: #fafdfc;

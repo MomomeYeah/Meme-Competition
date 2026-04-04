@@ -16,19 +16,19 @@
                 <i class="mdi mdi-view-dashboard sidebar-item-icon"></i>
                 <span>Dashboard</span>
             </router-link>
-            <a class="sidebar-item sidebar-item-inactive" href="#">
+            <a class="sidebar-item" href="#">
                 <i class="mdi mdi-sword-cross sidebar-item-icon"></i>
                 <span>Battles</span>
             </a>
-            <a class="sidebar-item sidebar-item-inactive" href="#">
+            <a class="sidebar-item" href="#">
                 <i class="mdi mdi-database-outline sidebar-item-icon"></i>
                 <span>Assets</span>
             </a>
-            <a class="sidebar-item sidebar-item-inactive" href="#">
+            <a class="sidebar-item" href="#">
                 <i class="mdi mdi-currency-usd sidebar-item-icon"></i>
                 <span>Earnings</span>
             </a>
-            <a class="sidebar-item sidebar-item-inactive" href="#">
+            <a class="sidebar-item" href="#">
                 <i class="mdi mdi-cog-outline sidebar-item-icon"></i>
                 <span>Settings</span>
             </a>
@@ -166,19 +166,6 @@
     .sidebar-item.router-link-active {
         color: var(--bt-primary-container);
         background: var(--bt-surface-container-low);
-    }
-
-    .sidebar-item-inactive {
-        /* uses .sidebar-item base */
-    }
-
-    .sidebar-item-danger {
-        color: var(--bt-error-dim);
-    }
-
-    .sidebar-item-danger:hover {
-        background: var(--bt-surface-container-highest);
-        color: var(--bt-error);
     }
 
     .sidebar-item-icon {

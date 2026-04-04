@@ -29,7 +29,7 @@
                     <div class="dropdown-username">{{ authStore.user.username }}</div>
                     <div class="dropdown-divider"></div>
                     <button class="dropdown-item dropdown-item-danger" type="button" @click="handleLogout">
-                        <i class="mdi mdi-logout sidebar-item-icon"></i>
+                        <i class="mdi mdi-logout dropdown-item-icon"></i>
                         <span>Logout</span>
                     </button>
                 </div>
@@ -236,7 +236,7 @@
         color: var(--bt-error);
     }
 
-    .sidebar-item-icon {
+    .dropdown-item-icon {
         font-size: 16px;
         line-height: 1;
         flex-shrink: 0;

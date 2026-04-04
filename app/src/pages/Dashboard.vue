@@ -23,7 +23,7 @@
         <section class="dashboard-hero">
             <h1 class="dashboard-heading">Dashboard</h1>
             <router-link class="hero-cta" to="/create-competition">
-                Create Competition
+                Create Battle
             </router-link>
         </section>
 
