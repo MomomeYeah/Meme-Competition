@@ -1,3 +1,4 @@
+import { createServer } from 'http';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -7,6 +8,8 @@ import 'dotenv/config';
 import authRoutes from './src/routes/auth.routes';
 import competitionRoutes from './src/routes/competition.routes';
 import { AppError } from './src/utils/errors';
+import { battleManager } from './src/services/BattleManager';
+import { attachBattleWebSocket } from './src/ws/battleWs';
 
 const app = express();
 const port = parseInt(process.env.PORT || '3000', 10);
@@ -51,7 +54,11 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, error: 'Not found' });
 });
 
-app.listen(port, () => {
+const httpServer = createServer(app);
+attachBattleWebSocket(httpServer, battleManager);
+battleManager.rehydrate();
+
+httpServer.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 

@@ -36,7 +36,13 @@ export class CompetitionController {
                 return;
             }
 
-            res.json({ success: true, data: competition });
+            // Augment files with public URLs for display
+            const filesWithUrls = (competition.files ?? []).map((f) => ({
+                ...f,
+                url: s3.getFileUrl(f.s3Key),
+            }));
+
+            res.json({ success: true, data: { ...competition, files: filesWithUrls } });
         } catch (error) {
             CompetitionController.handleError(error, res);
         }

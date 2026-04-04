@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { CompetitionController } from "../controllers/CompetitionController";
+import { BattleController } from "../controllers/BattleController";
 import { authMiddleware } from "../middleware/auth";
 import { fileUploadMiddleware, fileValidationMiddleware } from "../middleware/file";
 
@@ -12,6 +13,7 @@ router.post("/:id/join", authMiddleware, CompetitionController.joinCompetition);
 router.delete("/:id", authMiddleware, CompetitionController.deleteCompetition);
 router.post("/:id/relinquish", authMiddleware, CompetitionController.relinquishOwnership);
 router.post("/:id/claim", authMiddleware, CompetitionController.claimOwnership);
+router.post("/:id/battle/start", authMiddleware, BattleController.startBattle);
 
 // list files uploaded by current user
 router.get("/:id/files", authMiddleware, CompetitionController.listFiles);

@@ -1,0 +1,43 @@
+[
+  {
+    "competitionId": "comp-1",
+    "votes": {
+      "a5f8b9c6-9114-4245-87c8-b5fc02b56f96": {
+        "user-1": 5
+      },
+      "7031ddfa-d92c-4f24-9c6c-1c0cb1314b31": {
+        "user-2": 4
+      },
+      "1e951e3a-3d7e-481c-b713-a394faf5128d": {
+        "user-1": 5
+      },
+      "feb3f1b3-9e66-4b5c-a60c-44ea032a32de": {
+        "user-2": 4
+      }
+    }
+  },
+  {
+    "competitionId": "79f7a82d-726f-4989-bbd0-cb7f7e368e23",
+    "votes": {
+      "02e80867-afd7-4b58-a0ac-3021202306e1": {
+        "user-1": 5
+      }
+    }
+  },
+  {
+    "competitionId": "6145fe68-3ac3-4264-a6e2-2aaa5a9b66ce",
+    "votes": {
+      "f6f488e5-3681-4190-9a80-7e7a6d5c89e1": {
+        "user-2": 3
+      }
+    }
+  },
+  {
+    "competitionId": "86eb3cc0-3689-42bf-9908-23dbbd8071b1",
+    "votes": {
+      "5ed645ef-0071-487c-9efa-4617bb9fd30a": {
+        "user-2": 5
+      }
+    }
+  }
+]

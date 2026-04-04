@@ -6,6 +6,15 @@ export interface CompetitionFile {
     uploadedAt: string;
     rating: number | null;
     url: string;
+    uploaderId?: string;
+}
+
+export interface BattleState {
+    status: 'active' | 'complete';
+    shuffledFileIds: string[];
+    currentIndex: number;
+    entryStartedAt: string;
+    entryDurationMs: number;
 }
 
 export interface Competition {
@@ -16,6 +25,7 @@ export interface Competition {
     createdAt: string;
     members: string[];
     files?: CompetitionFile[];
+    battle?: BattleState | null;
 }
 
 export async function getCompetitionById(id: string): Promise<Competition> {
@@ -109,4 +119,12 @@ export async function listCompetitionFiles(competitionId: string): Promise<Compe
 export async function deleteCompetitionFile(competitionId: string, fileId: string): Promise<void> {
     const encoded = encodeURIComponent(fileId);
     await apiClient.delete(`/competitions/${competitionId}/files/${encoded}`);
+}
+
+export async function startBattle(competitionId: string): Promise<Competition> {
+    const response = await apiClient.post<{
+        success: boolean;
+        data: Competition;
+    }>(`/competitions/${competitionId}/battle/start`);
+    return response.data.data;
 }

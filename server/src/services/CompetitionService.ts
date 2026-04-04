@@ -18,6 +18,7 @@ export class CompetitionService {
             createdAt: new Date().toISOString(),
             members: [ownerId],
             files: [],
+            battle: null,
         };
 
         return create(COMPETITIONS_FILE, competition);
