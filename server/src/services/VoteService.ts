@@ -70,6 +70,12 @@ export class VoteService {
         writeVotes(all);
     }
 
+    /** Remove all vote data for a competition. Called when the competition is deleted. */
+    static deleteVotes(competitionId: string): void {
+        const all = readVotes();
+        writeVotes(all.filter((v) => v.competitionId !== competitionId));
+    }
+
     /** Returns a map of fileId → average rating (only for files that have votes) */
     static getAverages(competitionId: string): Record<string, number> {
         const { record } = getOrCreate(competitionId);

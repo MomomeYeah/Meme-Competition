@@ -2,6 +2,7 @@ import { type Competition, type CompetitionFile } from "../models/types";
 import { findById, filterByProperty, create, updateById, deleteById } from "../utils/json-db";
 import { ValidationError, NotFoundError } from "../utils/errors";
 import { generateId } from "../utils/generate-id";
+import { VoteService } from "./VoteService";
 
 const COMPETITIONS_FILE = "competitions.json";
 
@@ -90,6 +91,7 @@ export class CompetitionService {
         }
 
         deleteById<Competition>(COMPETITIONS_FILE, competitionId);
+        VoteService.deleteVotes(competitionId);
     }
 
     static relinquishOwnership(competitionId: string, requesterId: string): Competition {
