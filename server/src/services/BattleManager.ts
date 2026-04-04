@@ -8,7 +8,7 @@ import { VoteService } from './VoteService';
 import { NotFoundError, ValidationError } from '../utils/errors';
 
 const COMPETITIONS_FILE = 'competitions.json';
-const DEFAULT_ENTRY_DURATION_MS = 5000;
+const DEFAULT_ENTRY_DURATION_MS = 8000;
 
 export interface AuthenticatedWS extends WebSocket {
     userId: string;

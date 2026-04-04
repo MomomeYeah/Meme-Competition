@@ -391,7 +391,7 @@
     });
 
     const countdownPercent = computed(() => {
-        const duration = battle.entryDurationMs.value || 5000;
+        const duration = battle.entryDurationMs.value || 8000;
         return Math.min(100, Math.max(0, (battle.timeRemaining.value / duration) * 100));
     });
 

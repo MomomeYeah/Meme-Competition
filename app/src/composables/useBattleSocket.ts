@@ -35,14 +35,14 @@ export function useBattleSocket(): UseBattleSocket {
     const entryIndex = ref(0);
     const totalEntries = ref(0);
     const timeRemaining = ref(0);
-    const entryDurationMs = ref(5000);
+    const entryDurationMs = ref(8000);
     const myVote = ref<number | null>(null);
     const finalRatings = ref<FinalRating[]>([]);
 
     let ws: WebSocket | null = null;
     let countdownInterval: ReturnType<typeof setInterval> | null = null;
     let entryStartedAt = 0;
-    let currentEntryDurationMs = 5000;
+    let currentEntryDurationMs = 8000;
     let subscribedCompetitionId: string | null = null;
     /** Difference (ms) between client clock and server clock.
      *  Positive = client is ahead of server. Updated on every server message
