@@ -92,7 +92,7 @@
                                 <button
                                     v-for="n in 5"
                                     :key="n"
-                                    :class="['vote-star-btn', { 'vote-star-active': battle.myVote.value === n }]"
+                                    :class="['vote-star-btn', { 'vote-star-active': battle.myVote.value !== null && n <= battle.myVote.value }]"
                                     type="button"
                                     @click="battle.vote(n)"
                                 >
