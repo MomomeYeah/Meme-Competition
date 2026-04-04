@@ -5,7 +5,6 @@ import { battleManager, type AuthenticatedWS } from '../services/BattleManager';
 import { verifyToken } from '../utils/jwt';
 import { findById } from '../utils/json-db';
 import { type Competition } from '../models/types';
-import { VoteService } from '../services/VoteService';
 
 const COMPETITIONS_FILE = 'competitions.json';
 
@@ -117,6 +116,7 @@ function handleSubscribe(ws: AuthenticatedWS, msg: SubscribeMessage, manager: ty
     }
 }
 
+
 function handleVote(ws: AuthenticatedWS, msg: VoteMessage, manager: typeof battleManager): void {
     const { competitionId, fileId, rating } = msg.payload;
 
@@ -131,13 +131,37 @@ function handleVote(ws: AuthenticatedWS, msg: VoteMessage, manager: typeof battl
         return;
     }
 
-    // Only accept votes for the currently displayed entry
-    const currentFileId = competition.battle.shuffledFileIds[competition.battle.currentIndex];
-    if (fileId !== currentFileId) {
-        // Silently ignore votes for non-current entries
+    // Issue 1: reject votes from users who are not members of this competition
+    if (!competition.members.includes(ws.userId)) {
+        manager.send(ws, { type: 'ERROR', payload: { code: 'FORBIDDEN', message: 'Not a member of this competition' } });
         return;
     }
 
-    VoteService.setVote(competitionId, fileId, ws.userId, rating);
+    // Issue 3: inform the client when their vote arrived too late instead of
+    // silently discarding it — the star UI will reset rather than appearing saved
+    const currentFileId = competition.battle.shuffledFileIds[competition.battle.currentIndex];
+    if (fileId !== currentFileId) {
+        manager.send(ws, { type: 'VOTE_REJECTED', payload: { fileId, reason: 'Entry has already advanced' } });
+        return;
+    }
+
+    // Issue 2: prevent voting on own entry (client enforces this too, but never
+    // trust the client for server-side integrity)
+    const file = competition.files.find((f) => f.id === fileId);
+    if (file?.uploaderId === ws.userId) {
+        manager.send(ws, { type: 'ERROR', payload: { code: 'INVALID_VOTE', message: 'Cannot vote on your own entry' } });
+        return;
+    }
+
+    // Issues 5+6: record the vote in the in-memory buffer (flushed to disk once
+    // per entry advance, not once per vote); wrap in try/catch so a buffer error
+    // never silently ACKs an unsaved vote
+    try {
+        manager.recordVote(competitionId, fileId, ws.userId, rating);
+    } catch {
+        manager.send(ws, { type: 'ERROR', payload: { code: 'VOTE_FAILED', message: 'Failed to save vote' } });
+        return;
+    }
+
     manager.send(ws, { type: 'VOTE_ACK', payload: { fileId, rating } });
 }

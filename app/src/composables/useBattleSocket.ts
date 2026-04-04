@@ -44,6 +44,14 @@ export function useBattleSocket(): UseBattleSocket {
     let entryStartedAt = 0;
     let currentEntryDurationMs = 5000;
     let subscribedCompetitionId: string | null = null;
+    /** Difference (ms) between client clock and server clock.
+     *  Positive = client is ahead of server. Updated on every server message
+     *  that carries a serverTime field. */
+    let clockSkew = 0;
+
+    function updateClockSkew(serverTime: string): void {
+        clockSkew = Date.now() - Date.parse(serverTime);
+    }
 
     function startCountdown(startedAt: string, durationMs: number): void {
         entryStartedAt = Date.parse(startedAt);
@@ -52,7 +60,11 @@ export function useBattleSocket(): UseBattleSocket {
 
         if (countdownInterval) clearInterval(countdownInterval);
         countdownInterval = setInterval(() => {
-            const remaining = entryStartedAt + currentEntryDurationMs - Date.now();
+            // Subtract clock skew so the countdown reflects server time, not
+            // client time. This keeps all participants' bars in sync even when
+            // system clocks differ by a few seconds.
+            const serverNow = Date.now() - clockSkew;
+            const remaining = entryStartedAt + currentEntryDurationMs - serverNow;
             timeRemaining.value = Math.max(0, remaining);
         }, 100);
     }
@@ -75,18 +87,25 @@ export function useBattleSocket(): UseBattleSocket {
         switch (msg.type) {
             case 'BATTLE_STATE': {
                 const p = msg.payload;
+                // Issue 4: capture clock skew from the server timestamp before
+                // starting the countdown so all clients stay in sync.
+                updateClockSkew(p.serverTime);
                 battleStatus.value = p.status;
                 currentFileId.value = p.fileId;
                 currentFileUrl.value = p.fileUrl;
                 currentUploaderId.value = p.uploaderId;
                 entryIndex.value = p.currentIndex;
                 totalEntries.value = p.totalEntries;
-                myVote.value = null;
+                // Issue 7: restore the user's existing vote rather than always
+                // starting at null, so a page refresh shows the correct state.
+                myVote.value = p.myVote ?? null;
                 startCountdown(p.entryStartedAt, p.entryDurationMs);
                 break;
             }
             case 'ENTRY_ADVANCE': {
                 const p = msg.payload;
+                // Issue 4: re-sync clock skew on every advance.
+                updateClockSkew(p.serverTime);
                 battleStatus.value = 'active';
                 currentFileId.value = p.fileId;
                 currentFileUrl.value = p.fileUrl;
@@ -99,6 +118,12 @@ export function useBattleSocket(): UseBattleSocket {
             }
             case 'VOTE_ACK': {
                 myVote.value = msg.payload.rating;
+                break;
+            }
+            // Issue 3: a late vote was silently dropped before; now the server
+            // sends VOTE_REJECTED so we can clear the false confirmation.
+            case 'VOTE_REJECTED': {
+                myVote.value = null;
                 break;
             }
             case 'BATTLE_COMPLETE': {

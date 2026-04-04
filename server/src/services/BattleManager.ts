@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { type WebSocket } from 'ws';
+import { WebSocket } from 'ws';
 import { type Competition, type BattleState } from '../models/types';
 import { findById, updateById } from '../utils/json-db';
 import { getFileUrl } from '../utils/s3-client';
@@ -21,6 +21,7 @@ export type ServerMessage =
     | { type: 'BATTLE_STATE'; payload: BattleStatePayload }
     | { type: 'ENTRY_ADVANCE'; payload: EntryAdvancePayload }
     | { type: 'VOTE_ACK'; payload: VoteAckPayload }
+    | { type: 'VOTE_REJECTED'; payload: VoteRejectedPayload }
     | { type: 'BATTLE_COMPLETE'; payload: BattleCompletePayload }
     | { type: 'ERROR'; payload: { code: string; message: string } };
 
@@ -33,6 +34,11 @@ export interface BattleStatePayload {
     uploaderId: string;
     entryStartedAt: string;
     entryDurationMs: number;
+    /** ISO timestamp of the server at the moment this message was sent; used by
+     *  clients to compute clock skew for an accurate countdown display. */
+    serverTime: string;
+    /** The authenticated user's existing vote for this entry, or null if none. */
+    myVote: number | null;
 }
 
 export interface EntryAdvancePayload {
@@ -43,6 +49,8 @@ export interface EntryAdvancePayload {
     uploaderId: string;
     entryStartedAt: string;
     entryDurationMs: number;
+    /** ISO timestamp of the server at the moment this message was sent. */
+    serverTime: string;
 }
 
 export interface VoteAckPayload {
@@ -50,13 +58,25 @@ export interface VoteAckPayload {
     rating: number;
 }
 
+export interface VoteRejectedPayload {
+    fileId: string;
+    reason: string;
+}
+
 export interface BattleCompletePayload {
     finalRatings: { fileId: string; averageRating: number }[];
 }
 
+// In-memory vote buffer: competitionId → fileId → userId → rating
+type VoteBuffer = Record<string, Record<string, number>>;
+
 class BattleManager {
     private timers = new Map<string, ReturnType<typeof setTimeout>>();
     private clients = new Map<string, Set<AuthenticatedWS>>();
+    /** Votes accumulated since the last flush (one flush per entry advance). */
+    private voteBuffer = new Map<string, VoteBuffer>();
+
+    // ── Client registry ──────────────────────────────────────────────────────
 
     registerClient(competitionId: string, ws: AuthenticatedWS): void {
         if (!this.clients.has(competitionId)) {
@@ -69,22 +89,52 @@ class BattleManager {
         this.clients.get(competitionId)?.delete(ws);
     }
 
+    // ── Messaging ────────────────────────────────────────────────────────────
+
     broadcast(competitionId: string, message: ServerMessage): void {
         const room = this.clients.get(competitionId);
         if (!room) return;
         const payload = JSON.stringify(message);
         for (const client of room) {
-            if (client.readyState === 1 /* OPEN */) {
+            if (client.readyState === WebSocket.OPEN) {
                 client.send(payload);
             }
         }
     }
 
     send(ws: WebSocket, message: ServerMessage): void {
-        if (ws.readyState === 1 /* OPEN */) {
+        if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify(message));
         }
     }
+
+    // ── Vote buffer ──────────────────────────────────────────────────────────
+
+    /** Record a vote in the in-memory buffer. Does not touch disk. */
+    recordVote(competitionId: string, fileId: string, userId: string, rating: number): void {
+        if (!this.voteBuffer.has(competitionId)) {
+            this.voteBuffer.set(competitionId, {});
+        }
+        const buf = this.voteBuffer.get(competitionId)!;
+        if (!buf[fileId]) buf[fileId] = {};
+        buf[fileId][userId] = rating;
+    }
+
+    /** Return a user's buffered vote for a given file, or null if absent. */
+    getBufferedVote(competitionId: string, fileId: string, userId: string): number | null {
+        return this.voteBuffer.get(competitionId)?.[fileId]?.[userId] ?? null;
+    }
+
+    /** Flush the in-memory buffer to disk and clear it. */
+    private flushVoteBuffer(competitionId: string): void {
+        const buf = this.voteBuffer.get(competitionId);
+        if (buf && Object.keys(buf).length > 0) {
+            VoteService.flushVotes(competitionId, buf);
+        }
+        this.voteBuffer.delete(competitionId);
+    }
+
+    // ── Battle lifecycle ─────────────────────────────────────────────────────
 
     startBattle(competitionId: string, requesterId: string): Competition {
         const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
@@ -127,6 +177,9 @@ class BattleManager {
         const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
         if (!competition?.battle || competition.battle.status !== 'active') return;
 
+        // Flush buffered votes for the entry that just ended before moving on
+        this.flushVoteBuffer(competitionId);
+
         const nextIndex = competition.battle.currentIndex + 1;
 
         if (nextIndex >= competition.battle.shuffledFileIds.length) {
@@ -147,6 +200,9 @@ class BattleManager {
     }
 
     private completeBattle(competition: Competition): void {
+        // Flush any remaining buffered votes before computing averages
+        this.flushVoteBuffer(competition.id);
+
         const completedBattle: BattleState = {
             ...competition.battle!,
             status: 'complete',
@@ -191,12 +247,14 @@ class BattleManager {
             uploaderId: file.uploaderId,
             entryStartedAt: competition.battle!.entryStartedAt,
             entryDurationMs: competition.battle!.entryDurationMs,
+            serverTime: new Date().toISOString(),
         };
 
         this.broadcast(competition.id, { type: 'ENTRY_ADVANCE', payload });
     }
 
-    /** Send the current battle state to a single newly-connected client */
+    /** Send the current battle state to a single newly-connected client, including
+     *  their existing vote for the current entry if one exists. */
     sendCurrentState(ws: AuthenticatedWS, competition: Competition): void {
         const battle = competition.battle;
         if (!battle || battle.status === 'complete') return;
@@ -205,6 +263,10 @@ class BattleManager {
         if (!fileId) return;
         const file = competition.files.find((f) => f.id === fileId);
         if (!file) return;
+
+        // Look up any existing vote from the in-memory buffer (votes aren't
+        // flushed to disk until entry advance, so this is the correct source).
+        const myVote = this.getBufferedVote(competition.id, fileId, ws.userId);
 
         const payload: BattleStatePayload = {
             status: battle.status,
@@ -215,12 +277,14 @@ class BattleManager {
             uploaderId: file.uploaderId,
             entryStartedAt: battle.entryStartedAt,
             entryDurationMs: battle.entryDurationMs,
+            serverTime: new Date().toISOString(),
+            myVote,
         };
 
         this.send(ws, { type: 'BATTLE_STATE', payload });
     }
 
-    /** Called at server startup to re-arm timers for any battles that were active */
+    /** Called at server startup to re-arm timers for any battles that were active. */
     rehydrate(): void {
         let competitions: Competition[] = [];
         try {

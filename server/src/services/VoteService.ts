@@ -50,6 +50,26 @@ export class VoteService {
         return record.votes[fileId] ?? {};
     }
 
+    /** Merge an entire in-memory vote buffer for a competition into the persisted
+     *  store in a single read + write cycle. Called by BattleManager on each
+     *  entry advance and at battle completion. */
+    static flushVotes(
+        competitionId: string,
+        votes: Record<string, Record<string, number>>,
+    ): void {
+        const all = readVotes();
+        let record = all.find((v) => v.competitionId === competitionId);
+        if (!record) {
+            record = { competitionId, votes: {} };
+            all.push(record);
+        }
+        for (const [fileId, userVotes] of Object.entries(votes)) {
+            if (!record.votes[fileId]) record.votes[fileId] = {};
+            Object.assign(record.votes[fileId], userVotes);
+        }
+        writeVotes(all);
+    }
+
     /** Returns a map of fileId → average rating (only for files that have votes) */
     static getAverages(competitionId: string): Record<string, number> {
         const { record } = getOrCreate(competitionId);
