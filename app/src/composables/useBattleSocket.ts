@@ -87,8 +87,8 @@ export function useBattleSocket(): UseBattleSocket {
         switch (msg.type) {
             case 'BATTLE_STATE': {
                 const p = msg.payload;
-                // Issue 4: capture clock skew from the server timestamp before
-                // starting the countdown so all clients stay in sync.
+                // Capture clock skew from the server timestamp before starting
+                // the countdown so all clients stay in sync.
                 updateClockSkew(p.serverTime);
                 battleStatus.value = p.status;
                 currentFileId.value = p.fileId;
@@ -96,15 +96,15 @@ export function useBattleSocket(): UseBattleSocket {
                 currentUploaderId.value = p.uploaderId;
                 entryIndex.value = p.currentIndex;
                 totalEntries.value = p.totalEntries;
-                // Issue 7: restore the user's existing vote rather than always
-                // starting at null, so a page refresh shows the correct state.
+                // Restore the user's existing vote rather than starting at null,
+                // so a page refresh shows the correct previously-cast vote.
                 myVote.value = p.myVote ?? null;
                 startCountdown(p.entryStartedAt, p.entryDurationMs);
                 break;
             }
             case 'ENTRY_ADVANCE': {
                 const p = msg.payload;
-                // Issue 4: re-sync clock skew on every advance.
+                // Re-sync clock skew on every advance.
                 updateClockSkew(p.serverTime);
                 battleStatus.value = 'active';
                 currentFileId.value = p.fileId;
@@ -120,8 +120,8 @@ export function useBattleSocket(): UseBattleSocket {
                 myVote.value = msg.payload.rating;
                 break;
             }
-            // Issue 3: a late vote was silently dropped before; now the server
-            // sends VOTE_REJECTED so we can clear the false confirmation.
+            // A late vote was rejected by the server; clear the star highlight
+            // so the UI doesn't show a vote that wasn't saved.
             case 'VOTE_REJECTED': {
                 myVote.value = null;
                 break;

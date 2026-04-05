@@ -290,7 +290,8 @@ class BattleManager {
         try {
             const raw = readFileSync(join(process.cwd(), 'data', 'competitions.json'), 'utf-8');
             competitions = JSON.parse(raw);
-        } catch {
+        } catch (error) {
+            console.error('Failed to read competitions.json during rehydration:', error);
             return;
         }
 

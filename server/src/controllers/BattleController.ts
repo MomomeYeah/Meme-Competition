@@ -1,6 +1,7 @@
 import { type Request, type Response } from 'express';
 import { type ApiResponse } from '../models/types';
 import { battleManager } from '../services/BattleManager';
+import { AppError } from '../utils/errors';
 
 export class BattleController {
     static startBattle(req: Request, res: Response): void {
@@ -12,8 +13,8 @@ export class BattleController {
 
             const response: ApiResponse = { success: true, data: competition };
             res.status(200).json(response);
-        } catch (error: any) {
-            if (error.statusCode) {
+        } catch (error) {
+            if (error instanceof AppError) {
                 res.status(error.statusCode).json({ success: false, error: error.message });
             } else {
                 console.error('Unexpected error in startBattle:', error);
