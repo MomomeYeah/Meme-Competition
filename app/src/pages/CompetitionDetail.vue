@@ -21,7 +21,9 @@
                     <!-- Hero -->
                     <header class="hero">
                         <div class="hero-badges">
-                            <span class="badge-live">Active</span>
+                            <span :class="effectiveBattleStatus === 'complete' ? 'badge-complete' : 'badge-live'">
+                                {{ effectiveBattleStatus === 'complete' ? 'Complete' : 'Active' }}
+                            </span>
                             <span class="hero-id">
                                 ID: #{{ competitionsStore.currentCompetition.id.slice(0, 8).toUpperCase() }}
                             </span>
@@ -46,8 +48,101 @@
                         </div>
                     </header>
 
-                    <!-- My Submissions (members only) -->
-                    <section v-if="isMember" class="section">
+                    <!-- Battle view (shown when battle is active or complete) -->
+                    <section v-if="effectiveBattleStatus !== 'idle'" class="section battle-section">
+                        <!-- Active battle -->
+                        <template v-if="effectiveBattleStatus === 'active'">
+                            <div class="battle-header">
+                                <span class="section-title">LIVE BATTLE</span>
+                                <span class="battle-counter">
+                                    ENTRY {{ battle.entryIndex.value + 1 }} / {{ battle.totalEntries.value }}
+                                </span>
+                            </div>
+
+                            <!-- Meme frame -->
+                            <div class="battle-meme-frame">
+                                <img
+                                    v-if="battle.currentFileUrl.value"
+                                    :src="battle.currentFileUrl.value"
+                                    class="battle-meme-img"
+                                    alt="Current entry"
+                                />
+                                <div
+                                    v-if="battle.currentUploaderId.value === authStore.user?.id"
+                                    class="battle-own-overlay"
+                                >
+                                    <i class="mdi mdi-account-circle"></i>
+                                    Your entry
+                                </div>
+                            </div>
+
+                            <!-- Countdown bar -->
+                            <div class="battle-countdown-track">
+                                <div
+                                    class="battle-countdown-fill"
+                                    :style="{ width: countdownPercent + '%' }"
+                                ></div>
+                            </div>
+                            <p class="battle-time-label">
+                                {{ Math.ceil(battle.timeRemaining.value / 1000) }}s remaining
+                            </p>
+
+                            <!-- Vote stars -->
+                            <div v-if="battle.currentUploaderId.value !== authStore.user?.id" class="vote-stars">
+                                <button
+                                    v-for="n in 5"
+                                    :key="n"
+                                    :class="['vote-star-btn', { 'vote-star-active': battle.myVote.value !== null && n <= battle.myVote.value }]"
+                                    type="button"
+                                    @click="battle.vote(n)"
+                                >
+                                    <i :class="['mdi', battle.myVote.value !== null && n <= battle.myVote.value ? 'mdi-star' : 'mdi-star-outline']"></i>
+                                </button>
+                                <span class="vote-label">
+                                    {{ battle.myVote.value ? `${battle.myVote.value} / 5` : 'Cast your vote' }}
+                                </span>
+                            </div>
+                            <p v-else class="vote-label">Voting disabled for your own entry</p>
+                        </template>
+
+                        <!-- Complete battle - results -->
+                        <template v-else-if="effectiveBattleStatus === 'complete'">
+                            <div class="battle-header">
+                                <span class="section-title">BATTLE RESULTS</span>
+                                <span class="battle-counter">COMPLETE</span>
+                            </div>
+                            <div class="results-grid">
+                                <div
+                                    v-for="file in sortedResultFiles"
+                                    :key="file.id"
+                                    class="result-card"
+                                >
+                                    <img
+                                        v-if="isImage(file.name)"
+                                        :src="file.url"
+                                        :alt="file.name"
+                                        class="result-img"
+                                    />
+                                    <div class="result-info">
+                                        <p class="result-name">{{ file.name }}</p>
+                                        <div class="result-stars">
+                                            <i
+                                                v-for="n in 5"
+                                                :key="n"
+                                                :class="['mdi', file.rating !== null && n <= Math.round(file.rating) ? 'mdi-star' : 'mdi-star-outline', 'result-star']"
+                                            ></i>
+                                            <span class="result-score">
+                                                {{ file.rating !== null ? file.rating.toFixed(1) : 'N/A' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </section>
+
+                    <!-- My Submissions (members only, lobby only) -->
+                    <section v-if="isMember && effectiveBattleStatus === 'idle'" class="section">
                         <div class="section-header">
                             <h2 class="section-title">My Submissions</h2>
                             <span class="section-count">
@@ -174,11 +269,27 @@
                     <div v-if="isOwner" class="side-section">
                         <h3 class="side-title">Owner Actions</h3>
                         <div class="action-stack">
-                            <button class="action-btn" type="button" @click="copyShareLink">
+                            <button
+                                v-if="effectiveBattleStatus === 'idle'"
+                                class="action-btn action-btn-start"
+                                type="button"
+                                :disabled="startingBattle"
+                                @click="handleStartBattle"
+                            >
+                                <i class="mdi mdi-sword-cross"></i>
+                                {{ startingBattle ? 'Starting...' : 'Start the Battle' }}
+                            </button>
+                            <button
+                                v-if="effectiveBattleStatus === 'idle'"
+                                class="action-btn"
+                                type="button"
+                                @click="copyShareLink"
+                            >
                                 <i class="mdi mdi-link-variant"></i>
                                 Copy Invite Link
                             </button>
                             <button
+                                v-if="effectiveBattleStatus === 'idle'"
                                 class="action-btn action-btn-warning"
                                 type="button"
                                 :disabled="competitionsStore.loading"
@@ -200,7 +311,7 @@
                     </div>
 
                     <!-- Claim ownership -->
-                    <div v-else-if="isMember && isOwnerless" class="side-section">
+                    <div v-else-if="isMember && isOwnerless && effectiveBattleStatus === 'idle'" class="side-section">
                         <h3 class="side-title">Ownership</h3>
                         <p class="side-note">This battle has no owner.</p>
                         <button
@@ -262,11 +373,13 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, onMounted, reactive, ref } from "vue";
+    import { computed, onMounted, reactive, ref, watch } from "vue";
     import { useRoute, useRouter } from "vue-router";
     import { useAuthStore } from "../stores/auth";
     import { useCompetitionsStore } from "../stores/competitions";
     import type * as competitionsApi from "../api/competitions.api";
+    import { startBattle as apiBattleStart } from "../api/competitions.api";
+    import { useBattleSocket } from "../composables/useBattleSocket";
 
     const router = useRouter();
     const route = useRoute();
@@ -274,6 +387,24 @@
     const authStore = useAuthStore();
 
     const competitionId = route.params.id as string;
+
+    const battle = useBattleSocket();
+    const startingBattle = ref(false);
+
+    const effectiveBattleStatus = computed(() => {
+        if (battle.battleStatus.value !== 'idle') return battle.battleStatus.value;
+        return (competitionsStore.currentCompetition as any)?.battle?.status ?? 'idle';
+    });
+
+    const countdownPercent = computed(() => {
+        const duration = battle.entryDurationMs.value || 8000;
+        return Math.min(100, Math.max(0, (battle.timeRemaining.value / duration) * 100));
+    });
+
+    const sortedResultFiles = computed(() => {
+        const files = competitionsStore.currentCompetition?.files ?? [];
+        return [...files].sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+    });
 
     const fileInputRef = ref<HTMLInputElement | null>(null);
     const uploadedFiles = ref<competitionsApi.CompetitionFile[]>([]);
@@ -311,11 +442,31 @@
             await competitionsStore.fetchCompetitionById(competitionId);
             if (competitionsStore.currentCompetition && authStore.user) {
                 uploadedFiles.value = await competitionsStore.fetchFiles(competitionId);
+                battle.connect(competitionId);
             }
         } catch {
             router.push("/dashboard");
         }
     });
+
+    // Re-fetch competition when battle completes so file ratings are populated
+    watch(battle.battleStatus, async (status) => {
+        if (status === 'complete') {
+            await competitionsStore.fetchCompetitionById(competitionId);
+        }
+    });
+
+    async function handleStartBattle() {
+        startingBattle.value = true;
+        try {
+            await apiBattleStart(competitionId);
+            // WS will broadcast ENTRY_ADVANCE to all subscribers including us
+        } catch (err: any) {
+            showToast(err.response?.data?.error || "Failed to start battle", "error");
+        } finally {
+            startingBattle.value = false;
+        }
+    }
 
     function formatDate(dateString: string): string {
         return new Date(dateString).toLocaleDateString(undefined, {
@@ -499,6 +650,18 @@
     .badge-live {
         background: var(--bt-secondary-container);
         color: var(--bt-on-secondary-container);
+        padding: 0.2rem 0.6rem;
+        font-family: var(--bt-font-headline);
+        font-size: 0.625rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .badge-complete {
+        background: rgba(0, 245, 255, 0.1);
+        color: var(--bt-primary);
+        border: 1px solid rgba(0, 245, 255, 0.3);
         padding: 0.2rem 0.6rem;
         font-family: var(--bt-font-headline);
         font-size: 0.625rem;
@@ -1035,6 +1198,199 @@
 
     .lightbox-download:hover {
         color: var(--bt-primary-container);
+    }
+
+    /* ─── Start Battle button ──────────────────────────────────── */
+    .action-btn-start {
+        border-color: rgba(0, 245, 255, 0.35);
+        color: var(--bt-primary);
+        background: rgba(0, 245, 255, 0.04);
+    }
+
+    .action-btn-start:hover:not(:disabled) {
+        background: rgba(0, 245, 255, 0.1);
+        border-color: var(--bt-primary);
+        color: #fff;
+    }
+
+    /* ─── Battle section ────────────────────────────────────────── */
+    .battle-section {
+        border: 1px solid rgba(0, 245, 255, 0.2);
+        padding: 1.5rem;
+        background: rgba(0, 245, 255, 0.02);
+        margin-bottom: 3rem;
+    }
+
+    .battle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .battle-counter {
+        font-family: var(--bt-font-label);
+        font-size: 0.625rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--bt-muted);
+    }
+
+    .battle-meme-frame {
+        position: relative;
+        width: 100%;
+        max-height: 60vh;
+        background: var(--bt-surface-container-high);
+        border: 1px solid rgba(0, 245, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .battle-meme-img {
+        max-width: 100%;
+        max-height: 60vh;
+        object-fit: contain;
+        display: block;
+    }
+
+    .battle-own-overlay {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background: rgba(0, 245, 255, 0.15);
+        border: 1px solid rgba(0, 245, 255, 0.4);
+        color: var(--bt-primary);
+        font-family: var(--bt-font-label);
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        padding: 0.3rem 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .battle-countdown-track {
+        height: 4px;
+        background: var(--bt-surface-container-high);
+        margin-bottom: 0.375rem;
+        overflow: hidden;
+    }
+
+    .battle-countdown-fill {
+        height: 100%;
+        background: var(--bt-primary);
+        transition: width 100ms linear;
+        box-shadow: 0 0 8px rgba(0, 245, 255, 0.6);
+    }
+
+    .battle-time-label {
+        font-family: var(--bt-font-label);
+        font-size: 0.625rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--bt-muted);
+        margin-bottom: 1.25rem;
+    }
+
+    .vote-stars {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .vote-star-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--bt-outline-variant);
+        font-size: 1.75rem;
+        line-height: 1;
+        padding: 0.125rem;
+        transition: color 0.15s, transform 0.1s;
+    }
+
+    .vote-star-btn:hover {
+        color: var(--bt-primary);
+        transform: scale(1.15);
+    }
+
+    .vote-star-active {
+        color: var(--bt-primary);
+    }
+
+    .vote-label {
+        font-family: var(--bt-font-label);
+        font-size: 0.625rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--bt-muted);
+        margin-left: 0.5rem;
+    }
+
+    /* ─── Results grid ──────────────────────────────────────────── */
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .result-card {
+        background: var(--bt-surface-container-high);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+    }
+
+    .result-img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        display: block;
+        opacity: 0.85;
+    }
+
+    .result-info {
+        padding: 0.625rem;
+    }
+
+    .result-name {
+        font-family: var(--bt-font-label);
+        font-size: 0.5625rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--bt-on-surface-variant);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0.375rem;
+    }
+
+    .result-stars {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .result-star {
+        font-size: 0.875rem;
+        color: var(--bt-outline-variant);
+    }
+
+    .result-star.mdi-star {
+        color: var(--bt-primary);
+    }
+
+    .result-score {
+        font-family: var(--bt-font-label);
+        font-size: 0.6875rem;
+        font-weight: 700;
+        color: var(--bt-primary);
+        margin-left: 0.375rem;
     }
 
     /* ─── Toast ─────────────────────────────────────────────────── */

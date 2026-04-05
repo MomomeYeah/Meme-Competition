@@ -8,7 +8,61 @@
       "user-1",
       "user-2"
     ],
-    "files": []
+    "files": [
+      {
+        "id": "a5f8b9c6-9114-4245-87c8-b5fc02b56f96",
+        "name": "DkGZxaw.jpg",
+        "uploaderId": "user-2",
+        "uploadedAt": "2026-04-04T09:32:43.460Z",
+        "rating": 5,
+        "s3Key": "comp-1/user-2/g1q7lg7osmu0mgx9gombv8c"
+      },
+      {
+        "id": "1e951e3a-3d7e-481c-b713-a394faf5128d",
+        "name": "in3ZlJS.jpg",
+        "uploaderId": "user-2",
+        "uploadedAt": "2026-04-04T09:32:47.170Z",
+        "rating": 5,
+        "s3Key": "comp-1/user-2/40ujxeesb5zoii4lbawb"
+      },
+      {
+        "id": "feb3f1b3-9e66-4b5c-a60c-44ea032a32de",
+        "name": "DkGZxaw.jpg",
+        "uploaderId": "user-1",
+        "uploadedAt": "2026-04-04T09:32:49.917Z",
+        "rating": 4,
+        "s3Key": "comp-1/user-1/w3j3s7t3g2jjbmoibffnwf"
+      },
+      {
+        "id": "205c9bb2-43c3-455b-a16c-ed8acaec5335",
+        "name": "in3ZlJS.jpg",
+        "uploaderId": "user-1",
+        "uploadedAt": "2026-04-04T09:32:51.945Z",
+        "rating": null,
+        "s3Key": "comp-1/user-1/2rf17tq97utzeg7gbrqpna"
+      },
+      {
+        "id": "7031ddfa-d92c-4f24-9c6c-1c0cb1314b31",
+        "name": "TvQg5zk.jpg",
+        "uploaderId": "user-1",
+        "uploadedAt": "2026-04-04T09:32:55.068Z",
+        "rating": 4,
+        "s3Key": "comp-1/user-1/e96nv5608ac6bgfas39skb"
+      }
+    ],
+    "battle": {
+      "status": "complete",
+      "shuffledFileIds": [
+        "205c9bb2-43c3-455b-a16c-ed8acaec5335",
+        "a5f8b9c6-9114-4245-87c8-b5fc02b56f96",
+        "7031ddfa-d92c-4f24-9c6c-1c0cb1314b31",
+        "1e951e3a-3d7e-481c-b713-a394faf5128d",
+        "feb3f1b3-9e66-4b5c-a60c-44ea032a32de"
+      ],
+      "currentIndex": 4,
+      "entryStartedAt": "2026-04-04T09:33:17.785Z",
+      "entryDurationMs": 5000
+    }
   },
   {
     "id": "comp-2",

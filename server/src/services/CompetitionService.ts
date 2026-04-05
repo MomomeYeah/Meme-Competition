@@ -2,6 +2,7 @@ import { type Competition, type CompetitionFile } from "../models/types";
 import { findById, filterByProperty, create, updateById, deleteById } from "../utils/json-db";
 import { ValidationError, NotFoundError } from "../utils/errors";
 import { generateId } from "../utils/generate-id";
+import { VoteService } from "./VoteService";
 
 const COMPETITIONS_FILE = "competitions.json";
 
@@ -18,6 +19,7 @@ export class CompetitionService {
             createdAt: new Date().toISOString(),
             members: [ownerId],
             files: [],
+            battle: null,
         };
 
         return create(COMPETITIONS_FILE, competition);
@@ -27,6 +29,9 @@ export class CompetitionService {
         const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
         if (!competition) {
             throw new NotFoundError("Competition not found");
+        }
+        if (competition.battle?.status === 'active' || competition.battle?.status === 'complete') {
+            throw new ValidationError("Cannot upload entries once the battle has started");
         }
 
         const files = competition.files ?? [];
@@ -89,6 +94,7 @@ export class CompetitionService {
         }
 
         deleteById<Competition>(COMPETITIONS_FILE, competitionId);
+        VoteService.deleteVotes(competitionId);
     }
 
     static relinquishOwnership(competitionId: string, requesterId: string): Competition {
@@ -98,6 +104,9 @@ export class CompetitionService {
         }
         if (competition.owner !== requesterId) {
             throw new ValidationError("Only the owner can relinquish ownership");
+        }
+        if (competition.battle?.status === 'active' || competition.battle?.status === 'complete') {
+            throw new ValidationError("Cannot relinquish ownership once the battle has started");
         }
         competition.owner = null;
         updateById<Competition>(COMPETITIONS_FILE, competitionId, {
@@ -116,6 +125,9 @@ export class CompetitionService {
         }
         if (!competition.members.includes(userId)) {
             throw new ValidationError("Only a member can claim ownership");
+        }
+        if (competition.battle?.status === 'active' || competition.battle?.status === 'complete') {
+            throw new ValidationError("Cannot claim ownership once the battle has started");
         }
         competition.owner = userId;
         updateById<Competition>(COMPETITIONS_FILE, competitionId, {

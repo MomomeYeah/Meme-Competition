@@ -23,6 +23,20 @@ export interface CompetitionFile {
     s3Key: string;
 }
 
+export interface BattleState {
+    status: 'active' | 'complete';
+    shuffledFileIds: string[];
+    currentIndex: number;
+    entryStartedAt: string;
+    entryDurationMs: number;
+}
+
+export interface BattleVotes {
+    competitionId: string;
+    // votes[fileId][userId] = rating (1-5)
+    votes: Record<string, Record<string, number>>;
+}
+
 export interface Competition {
     id: string;
     title: string;
@@ -31,6 +45,7 @@ export interface Competition {
     createdAt: string;
     members: string[];
     files: CompetitionFile[];
+    battle: BattleState | null;
 }
 
 export interface JwtPayload {

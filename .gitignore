@@ -1,0 +1,5 @@
+# Claude Code — local permissions and session state are machine-specific
+.claude/settings.local.json
+
+# OS
+Thumbs.db

@@ -2,7 +2,9 @@
     <div class="comp-card" @click="$emit('click')">
         <!-- Colour header band -->
         <div class="comp-card-header" :style="{ background: headerGradient }">
-            <div class="comp-card-badge">Active</div>
+            <div :class="['comp-card-badge', competition.battle?.status === 'complete' ? 'comp-card-badge-complete' : '']">
+                {{ competition.battle?.status === 'complete' ? 'Complete' : 'Active' }}
+            </div>
         </div>
 
         <div class="comp-card-body">
@@ -81,6 +83,12 @@
         font-weight: 700;
         letter-spacing: 0.15em;
         text-transform: uppercase;
+    }
+
+    .comp-card-badge-complete {
+        background: rgba(0, 245, 255, 0.12);
+        color: var(--bt-primary);
+        border: 1px solid rgba(0, 245, 255, 0.3);
     }
 
     .comp-card-body {

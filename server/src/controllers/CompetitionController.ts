@@ -3,6 +3,7 @@ import { CompetitionService } from "../services/CompetitionService";
 import { type ApiResponse, type CompetitionUserFile } from "../models/types";
 import { generateId } from "../utils/generate-id";
 import * as s3 from "../utils/s3-client";
+import { AppError } from "../utils/errors";
 
 export class CompetitionController {
     static async createCompetition(req: Request, res: Response): Promise<void> {
@@ -36,7 +37,13 @@ export class CompetitionController {
                 return;
             }
 
-            res.json({ success: true, data: competition });
+            // Augment files with public URLs for display
+            const filesWithUrls = (competition.files ?? []).map((f) => ({
+                ...f,
+                url: s3.getFileUrl(f.s3Key),
+            }));
+
+            res.json({ success: true, data: { ...competition, files: filesWithUrls } });
         } catch (error) {
             CompetitionController.handleError(error, res);
         }
@@ -213,11 +220,11 @@ export class CompetitionController {
         }
     }
 
-    private static handleError(error: any, res: Response): void {
-        if (error.statusCode) {
+    private static handleError(error: unknown, res: Response): void {
+        if (error instanceof AppError) {
             res.status(error.statusCode).json({ success: false, error: error.message });
         } else {
-            console.log("Unexpected error:", error);
+            console.error("Unexpected error:", error);
             res.status(500).json({ success: false, error: "Internal server error" });
         }
     }
