@@ -1,5 +1,6 @@
 # Claude Code — local permissions and session state are machine-specific
 .claude/settings.local.json
+.claude/worktrees/
 
 # OS
 Thumbs.db
