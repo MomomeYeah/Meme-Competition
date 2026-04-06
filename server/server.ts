@@ -10,7 +10,7 @@ import competitionRoutes from './src/routes/competition.routes';
 import { AppError } from './src/utils/errors';
 import { battleManager } from './src/services/BattleManager';
 import { attachBattleWebSocket } from './src/ws/battleWs';
-import { connectDb } from './src/db/client';
+import { connectDb, closeDb } from './src/db/client';
 import { createIndexes } from './src/db/collections';
 
 const app = express();
@@ -73,3 +73,11 @@ start().catch((err) => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });
+
+async function shutdown(): Promise<void> {
+  await closeDb();
+  process.exit(0);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

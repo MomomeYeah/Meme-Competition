@@ -59,12 +59,14 @@ export function attachBattleWebSocket(httpServer: Server, manager: typeof battle
 
             switch (msg.type) {
                 case 'SUBSCRIBE':
-                    handleSubscribe(authWs, msg, manager).catch(() => {
+                    handleSubscribe(authWs, msg, manager).catch((err) => {
+                        console.error('Unhandled error in handleSubscribe:', err);
                         manager.send(ws, { type: 'ERROR', payload: { code: 'INTERNAL', message: 'Internal error' } });
                     });
                     break;
                 case 'VOTE':
-                    handleVote(authWs, msg, manager).catch(() => {
+                    handleVote(authWs, msg, manager).catch((err) => {
+                        console.error('Unhandled error in handleVote:', err);
                         manager.send(ws, { type: 'ERROR', payload: { code: 'INTERNAL', message: 'Internal error' } });
                     });
                     break;

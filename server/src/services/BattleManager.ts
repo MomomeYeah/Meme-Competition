@@ -81,6 +81,15 @@ class BattleManager {
         this.clients.get(competitionId)?.delete(ws);
     }
 
+    /** Cancel an in-progress battle timer, e.g. when a competition is deleted. */
+    cancelBattle(competitionId: string): void {
+        const timer = this.timers.get(competitionId);
+        if (timer) {
+            clearTimeout(timer);
+            this.timers.delete(competitionId);
+        }
+    }
+
     // ── Messaging ────────────────────────────────────────────────────────────
 
     broadcast(competitionId: string, message: ServerMessage): void {
