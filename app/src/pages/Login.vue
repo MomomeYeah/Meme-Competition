@@ -203,7 +203,7 @@
     function switchTab(tab: "login" | "signup") {
         if (tab === activeTab.value) return;
         clearForm();
-        router.push(tab === "login" ? "/login" : "/register");
+        router.push({ path: tab === "login" ? "/login" : "/register", query: route.query });
     }
 
     function clearForm() {
