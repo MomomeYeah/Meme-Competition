@@ -17,6 +17,11 @@ export interface BattleState {
     entryDurationMs: number;
 }
 
+export interface MemberDetail {
+    id: string;
+    username: string;
+}
+
 export interface Competition {
     id: string;
     title: string;
@@ -24,6 +29,8 @@ export interface Competition {
     owner: string | null;
     createdAt: string;
     members: string[];
+    /** Resolved username for each member — present on the detail endpoint only */
+    memberDetails?: MemberDetail[];
     files?: CompetitionFile[];
     battle?: BattleState | null;
 }

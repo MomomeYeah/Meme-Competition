@@ -6,6 +6,9 @@ export interface User {
     createdAt: string;
 }
 
+/** User shape returned to API callers — passwordHash is never exposed */
+export type PublicUser = Omit<User, 'passwordHash'>;
+
 export interface CompetitionUserFile {
     id: string;
     name: string;
@@ -29,12 +32,6 @@ export interface BattleState {
     currentIndex: number;
     entryStartedAt: string;
     entryDurationMs: number;
-}
-
-export interface BattleVotes {
-    competitionId: string;
-    // votes[fileId][userId] = rating (1-5)
-    votes: Record<string, Record<string, number>>;
 }
 
 export interface Competition {

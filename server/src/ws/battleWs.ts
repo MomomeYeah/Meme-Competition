@@ -3,10 +3,8 @@ import { parse as parseCookies } from 'cookie';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { battleManager, type AuthenticatedWS } from '../services/BattleManager';
 import { verifyToken } from '../utils/jwt';
-import { findById } from '../utils/json-db';
-import { type Competition } from '../models/types';
-
-const COMPETITIONS_FILE = 'competitions.json';
+import { CompetitionService } from '../services/CompetitionService';
+import { VoteService } from '../services/VoteService';
 
 // Client → Server message types
 interface SubscribeMessage {
@@ -61,10 +59,16 @@ export function attachBattleWebSocket(httpServer: Server, manager: typeof battle
 
             switch (msg.type) {
                 case 'SUBSCRIBE':
-                    handleSubscribe(authWs, msg, manager);
+                    handleSubscribe(authWs, msg, manager).catch((err) => {
+                        console.error('Unhandled error in handleSubscribe:', err);
+                        manager.send(ws, { type: 'ERROR', payload: { code: 'INTERNAL', message: 'Internal error' } });
+                    });
                     break;
                 case 'VOTE':
-                    handleVote(authWs, msg, manager);
+                    handleVote(authWs, msg, manager).catch((err) => {
+                        console.error('Unhandled error in handleVote:', err);
+                        manager.send(ws, { type: 'ERROR', payload: { code: 'INTERNAL', message: 'Internal error' } });
+                    });
                     break;
                 default:
                     manager.send(ws, {
@@ -88,11 +92,13 @@ export function attachBattleWebSocket(httpServer: Server, manager: typeof battle
     });
 }
 
-function handleSubscribe(ws: AuthenticatedWS, msg: SubscribeMessage, manager: typeof battleManager): void {
+async function handleSubscribe(ws: AuthenticatedWS, msg: SubscribeMessage, manager: typeof battleManager): Promise<void> {
     const { competitionId } = msg.payload;
 
-    const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
-    if (!competition) {
+    let competition;
+    try {
+        competition = await CompetitionService.getCompetitionById(competitionId);
+    } catch {
         manager.send(ws, { type: 'ERROR', payload: { code: 'NOT_FOUND', message: 'Competition not found' } });
         return;
     }
@@ -112,12 +118,11 @@ function handleSubscribe(ws: AuthenticatedWS, msg: SubscribeMessage, manager: ty
 
     // Send current battle state if the battle is active
     if (competition.battle?.status === 'active') {
-        manager.sendCurrentState(ws, competition);
+        await manager.sendCurrentState(ws, competition);
     }
 }
 
-
-function handleVote(ws: AuthenticatedWS, msg: VoteMessage, manager: typeof battleManager): void {
+async function handleVote(ws: AuthenticatedWS, msg: VoteMessage, manager: typeof battleManager): Promise<void> {
     const { competitionId, fileId, rating } = msg.payload;
 
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
@@ -125,8 +130,15 @@ function handleVote(ws: AuthenticatedWS, msg: VoteMessage, manager: typeof battl
         return;
     }
 
-    const competition = findById<Competition>(COMPETITIONS_FILE, competitionId);
-    if (!competition?.battle || competition.battle.status !== 'active') {
+    let competition;
+    try {
+        competition = await CompetitionService.getCompetitionById(competitionId);
+    } catch {
+        manager.send(ws, { type: 'ERROR', payload: { code: 'NOT_FOUND', message: 'Competition not found' } });
+        return;
+    }
+
+    if (!competition.battle || competition.battle.status !== 'active') {
         manager.send(ws, { type: 'ERROR', payload: { code: 'NOT_ACTIVE', message: 'No active battle' } });
         return;
     }
@@ -153,11 +165,8 @@ function handleVote(ws: AuthenticatedWS, msg: VoteMessage, manager: typeof battl
         return;
     }
 
-    // Record the vote in the in-memory buffer (flushed to disk once per entry
-    // advance, not once per vote); wrap in try/catch so a buffer error never
-    // silently ACKs an unsaved vote
     try {
-        manager.recordVote(competitionId, fileId, ws.userId, rating);
+        await VoteService.setVote(competitionId, fileId, ws.userId, rating);
     } catch {
         manager.send(ws, { type: 'ERROR', payload: { code: 'VOTE_FAILED', message: 'Failed to save vote' } });
         return;

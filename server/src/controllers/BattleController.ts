@@ -4,12 +4,12 @@ import { battleManager } from '../services/BattleManager';
 import { AppError } from '../utils/errors';
 
 export class BattleController {
-    static startBattle(req: Request, res: Response): void {
+    static async startBattle(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
             const competitionId = req.params.id as string;
 
-            const competition = battleManager.startBattle(competitionId, userId);
+            const competition = await battleManager.startBattle(competitionId, userId);
 
             const response: ApiResponse = { success: true, data: competition };
             res.status(200).json(response);

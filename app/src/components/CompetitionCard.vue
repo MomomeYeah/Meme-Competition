@@ -11,7 +11,7 @@
             <h3 class="comp-card-title">{{ competition.title }}</h3>
             <p class="comp-card-meta">
                 {{ competition.members.length }}
-                {{ competition.members.length === 1 ? 'member' : 'members' }}
+                {{ competition.members.length === 1 ? 'participant' : 'participants' }}
                 &nbsp;·&nbsp;
                 {{ formatDate(competition.createdAt) }}
             </p>

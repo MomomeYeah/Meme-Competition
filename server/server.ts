@@ -10,6 +10,8 @@ import competitionRoutes from './src/routes/competition.routes';
 import { AppError } from './src/utils/errors';
 import { battleManager } from './src/services/BattleManager';
 import { attachBattleWebSocket } from './src/ws/battleWs';
+import { connectDb, closeDb } from './src/db/client';
+import { createIndexes } from './src/db/collections';
 
 const app = express();
 const port = parseInt(process.env.PORT || '3000', 10);
@@ -56,9 +58,26 @@ app.use((req: Request, res: Response) => {
 
 const httpServer = createServer(app);
 attachBattleWebSocket(httpServer, battleManager);
-battleManager.rehydrate();
 
-httpServer.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+async function start(): Promise<void> {
+  await connectDb();
+  await createIndexes();
+  await battleManager.rehydrate();
+
+  httpServer.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
 
+async function shutdown(): Promise<void> {
+  await closeDb();
+  process.exit(0);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

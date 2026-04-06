@@ -14,7 +14,7 @@ export class AuthController {
 
     static async register(req: Request, res: Response): Promise<void> {
         try {
-            const result = UserService.register(req.body);
+            const result = await UserService.register(req.body);
             AuthController.setJWTCookie(res, result.token);
 
             const response: ApiResponse = {
@@ -43,7 +43,7 @@ export class AuthController {
                 return;
             }
 
-            const result = UserService.login(username, password);
+            const result = await UserService.login(username, password);
             AuthController.setJWTCookie(res, result.token);
 
             const response: ApiResponse = {
@@ -72,7 +72,7 @@ export class AuthController {
                 return;
             }
 
-            const user = UserService.getUserById(req.user.userId);
+            const user = await UserService.getUserById(req.user.userId);
             res.json({ success: true, data: { user } });
         } catch (error) {
             AuthController.handleError(error, res);
