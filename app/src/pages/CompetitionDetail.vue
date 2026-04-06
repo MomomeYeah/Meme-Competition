@@ -146,9 +146,11 @@
                         <div class="section-header">
                             <h2 class="section-title">My Submissions</h2>
                             <span class="section-count">
-                                {{ uploadedFiles.length }} file{{ uploadedFiles.length !== 1 ? 's' : '' }}
+                                {{ uploadedFiles.length }} / {{ MAX_ENTRIES }} file{{ uploadedFiles.length !== 1 ? 's' : '' }}
                             </span>
                         </div>
+
+                        <p class="submissions-hint">You can upload up to {{ MAX_ENTRIES }} entries before the battle starts.</p>
 
                         <div class="file-grid">
                             <!-- Uploaded files -->
@@ -182,8 +184,9 @@
                                 </div>
                             </div>
 
-                            <!-- Upload slot -->
+                            <!-- Upload slot (hidden when at limit) -->
                             <button
+                                v-if="uploadedFiles.length < MAX_ENTRIES"
                                 class="file-slot file-slot-empty"
                                 type="button"
                                 :disabled="competitionsStore.loading"
@@ -192,6 +195,12 @@
                                 <i class="mdi mdi-plus-circle upload-slot-icon"></i>
                                 <span class="upload-slot-label">Upload Entry</span>
                             </button>
+                        </div>
+
+                        <!-- Max entries reached notice -->
+                        <div v-if="uploadedFiles.length >= MAX_ENTRIES" class="submissions-limit-notice">
+                            <i class="mdi mdi-information-outline"></i>
+                            You've reached the maximum of {{ MAX_ENTRIES }} entries. Remove one or more submissions to upload more.
                         </div>
 
                         <!-- Hidden file input -->
@@ -376,6 +385,8 @@
     import type * as competitionsApi from "../api/competitions.api";
     import { startBattle as apiBattleStart } from "../api/competitions.api";
     import { useBattleSocket } from "../composables/useBattleSocket";
+
+    const MAX_ENTRIES = 3;
 
     const router = useRouter();
     const route = useRoute();
@@ -758,6 +769,25 @@
         letter-spacing: 0.15em;
         text-transform: uppercase;
         color: var(--bt-muted);
+    }
+
+    .submissions-hint {
+        font-size: 0.75rem;
+        color: var(--bt-muted);
+        margin: -0.25rem 0 0.75rem;
+    }
+
+    .submissions-limit-notice {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding: 0.625rem 0.875rem;
+        background: rgba(0, 245, 255, 0.08);
+        border: 1px solid rgba(0, 245, 255, 0.25);
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        color: var(--bt-primary);
     }
 
     /* ─── File grid ─────────────────────────────────────────────── */
