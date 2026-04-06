@@ -107,7 +107,8 @@ export const useCompetitionsStore = defineStore("competitions", () => {
                 userCompetitions.value[idx] = updated;
             }
             if (currentCompetition.value?.id === competitionId) {
-                currentCompetition.value = updated;
+                // Preserve memberDetails — the relinquish endpoint doesn't enrich it
+                currentCompetition.value = { ...updated, memberDetails: currentCompetition.value.memberDetails };
             }
 
             return updated;
@@ -130,7 +131,8 @@ export const useCompetitionsStore = defineStore("competitions", () => {
                 userCompetitions.value[idx] = updated;
             }
             if (currentCompetition.value?.id === competitionId) {
-                currentCompetition.value = updated;
+                // Preserve memberDetails — the claim endpoint doesn't enrich it
+                currentCompetition.value = { ...updated, memberDetails: currentCompetition.value.memberDetails };
             }
 
             return updated;
