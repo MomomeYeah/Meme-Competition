@@ -6,6 +6,9 @@ export interface User {
     createdAt: string;
 }
 
+/** User shape returned to API callers — passwordHash is never exposed */
+export type PublicUser = Omit<User, 'passwordHash'>;
+
 export interface CompetitionUserFile {
     id: string;
     name: string;
