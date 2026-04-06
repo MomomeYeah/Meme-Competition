@@ -2,10 +2,47 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Copy .env",
+            "type": "shell",
+            "command": "[ -f server/.env ] || cp server/.env.example server/.env",
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Install App",
+            "type": "shell",
+            "command": "bun install",
+            "options": { "cwd": "${workspaceFolder}/app" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Install Server",
+            "type": "shell",
+            "command": "bun install",
+            "options": { "cwd": "${workspaceFolder}/server" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Start MongoDB",
+            "type": "shell",
+            "command": "docker compose up -d --wait mongodb",
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup",
+            "dependsOn": ["Copy .env", "Install App", "Install Server", "Start MongoDB"],
+            "dependsOrder": "parallel",
+            "type": "shell",
+            "command": "echo Setup complete",
+            "problemMatcher": []
+        },
+        {
             "label": "Server",
             "type": "shell",
             "command": "bun dev",
             "options": { "cwd": "${workspaceFolder}/server" },
+            "dependsOn": ["Setup"],
             "isBackground": true,
             "problemMatcher": []
         },
@@ -14,6 +51,7 @@
             "type": "shell",
             "command": "bun dev",
             "options": { "cwd": "${workspaceFolder}/app" },
+            "dependsOn": ["Setup"],
             "isBackground": true,
             "problemMatcher": []
         },
