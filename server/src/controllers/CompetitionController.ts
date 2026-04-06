@@ -4,6 +4,7 @@ import { type ApiResponse, type CompetitionUserFile } from "../models/types";
 import { generateId } from "../utils/generate-id";
 import * as s3 from "../utils/s3-client";
 import { AppError } from "../utils/errors";
+import { usersCollection } from "../db/collections";
 
 export class CompetitionController {
     static async createCompetition(req: Request, res: Response): Promise<void> {
@@ -12,7 +13,7 @@ export class CompetitionController {
             const userId = req.user!.userId;
 
             const { title } = req.body;
-            const competition = CompetitionService.createCompetition(title, userId);
+            const competition = await CompetitionService.createCompetition(title, userId);
 
             const response: ApiResponse = {
                 success: true,
@@ -29,7 +30,7 @@ export class CompetitionController {
         try {
             const userId = req.user!.userId;
             const id = req.params.id as string;
-            const competition = CompetitionService.getCompetitionById(id);
+            const competition = await CompetitionService.getCompetitionById(id);
 
             // ensure the requesting user is a member
             if (!competition.members.includes(userId)) {
@@ -43,7 +44,16 @@ export class CompetitionController {
                 url: s3.getFileUrl(f.s3Key),
             }));
 
-            res.json({ success: true, data: { ...competition, files: filesWithUrls } });
+            // Resolve member IDs to usernames for display in the lobby
+            const memberDocs = await usersCollection()
+                .find({ _id: { $in: competition.members } }, { projection: { _id: 1, username: 1 } })
+                .toArray();
+            const memberDetails = competition.members.map((mid) => ({
+                id: mid,
+                username: memberDocs.find((u) => u._id === mid)?.username ?? mid,
+            }));
+
+            res.json({ success: true, data: { ...competition, files: filesWithUrls, memberDetails } });
         } catch (error) {
             CompetitionController.handleError(error, res);
         }
@@ -52,7 +62,7 @@ export class CompetitionController {
     static async getUserCompetitions(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
-            const competitions = CompetitionService.getCompetitionsByMember(userId);
+            const competitions = await CompetitionService.getCompetitionsByMember(userId);
 
             res.json({
                 success: true,
@@ -70,7 +80,7 @@ export class CompetitionController {
             // user is guaranteed to exist because of authMiddleware
             const userId = req.user!.userId;
             const id = req.params.id as string;
-            const competition = CompetitionService.joinCompetition(id, userId);
+            const competition = await CompetitionService.joinCompetition(id, userId);
 
             res.json({ success: true, data: competition });
         } catch (error) {
@@ -84,7 +94,7 @@ export class CompetitionController {
             const id = req.params.id as string;
 
             await s3.deleteFilesWithPrefix(id);
-            CompetitionService.deleteCompetition(id, userId);
+            await CompetitionService.deleteCompetition(id, userId);
             res.status(204).send();
         } catch (error) {
             CompetitionController.handleError(error, res);
@@ -96,7 +106,7 @@ export class CompetitionController {
             const userId = req.user!.userId;
             const id = req.params.id as string;
 
-            const comp = CompetitionService.relinquishOwnership(id, userId);
+            const comp = await CompetitionService.relinquishOwnership(id, userId);
             res.json({ success: true, data: comp });
         } catch (error) {
             CompetitionController.handleError(error, res);
@@ -108,7 +118,7 @@ export class CompetitionController {
             const userId = req.user!.userId;
             const id = req.params.id as string;
 
-            const comp = CompetitionService.claimOwnership(id, userId);
+            const comp = await CompetitionService.claimOwnership(id, userId);
             res.json({ success: true, data: comp });
         } catch (error) {
             CompetitionController.handleError(error, res);
@@ -121,7 +131,7 @@ export class CompetitionController {
             const userId = req.user!.userId;
             const id = req.params.id as string;
 
-            const competition = CompetitionService.getCompetitionById(id);
+            const competition = await CompetitionService.getCompetitionById(id);
             if (!competition.members.includes(userId)) {
                 res.status(403).json({ success: false, error: "Access denied" });
                 return;
@@ -145,7 +155,7 @@ export class CompetitionController {
                 rating: null,
                 s3Key: key,
             };
-            CompetitionService.addFileToCompetition(id, fileEntry);
+            await CompetitionService.addFileToCompetition(id, fileEntry);
 
             res.json({ success: true, data: { file: fileEntry } });
         } catch (error) {
@@ -159,7 +169,7 @@ export class CompetitionController {
             const userId = req.user!.userId;
             const id = req.params.id as string;
 
-            const competition = CompetitionService.getCompetitionById(id);
+            const competition = await CompetitionService.getCompetitionById(id);
             if (!competition.members.includes(userId)) {
                 res.status(403).json({ success: false, error: "Access denied" });
                 return;
@@ -191,7 +201,7 @@ export class CompetitionController {
             const id = req.params.id as string;
             const fileId = req.params.fileId as string;
 
-            const competition = CompetitionService.getCompetitionById(id);
+            const competition = await CompetitionService.getCompetitionById(id);
             if (!competition.members.includes(userId)) {
                 res.status(403).json({ success: false, error: "Access denied" });
                 return;
@@ -213,7 +223,7 @@ export class CompetitionController {
             }
 
             await s3.deleteFile(file.s3Key);
-            CompetitionService.removeFileFromCompetition(id, fileId);
+            await CompetitionService.removeFileFromCompetition(id, fileId);
             res.json({ success: true });
         } catch (error) {
             CompetitionController.handleError(error, res);

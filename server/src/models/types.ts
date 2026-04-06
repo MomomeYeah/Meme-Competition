@@ -31,12 +31,6 @@ export interface BattleState {
     entryDurationMs: number;
 }
 
-export interface BattleVotes {
-    competitionId: string;
-    // votes[fileId][userId] = rating (1-5)
-    votes: Record<string, Record<string, number>>;
-}
-
 export interface Competition {
     id: string;
     title: string;

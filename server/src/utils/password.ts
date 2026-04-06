@@ -1,22 +1,16 @@
-/**
- * Simple password validation for MVP.
- * In production, use bcrypt for hashing passwords.
- */
+import { hash, verify } from '@node-rs/argon2';
 
-export function hashPassword(password: string): string {
-    // For MVP, just use a simple hash. In production, use bcrypt.
-    // This is NOT secure for production!
-    return Buffer.from(password).toString("base64");
+export async function hashPassword(password: string): Promise<string> {
+    return hash(password);
 }
 
-export function verifyPassword(password: string, hash: string): boolean {
-    // Simple comparison for MVP
-    return hashPassword(password) === hash;
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+    return verify(storedHash, password);
 }
 
 export function validatePassword(password: string): { valid: boolean; error?: string } {
     if (!password || password.length < 4) {
-        return { valid: false, error: "Password must be at least 4 characters" };
+        return { valid: false, error: 'Password must be at least 4 characters' };
     }
     return { valid: true };
 }

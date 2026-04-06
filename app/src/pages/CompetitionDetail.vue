@@ -33,7 +33,7 @@
                         </h1>
                         <div class="hero-meta">
                             <div class="hero-meta-item">
-                                <span class="meta-label">Members</span>
+                                <span class="meta-label">Participants</span>
                                 <span class="meta-value">
                                     {{ competitionsStore.currentCompetition.members.length }}
                                 </span>
@@ -210,23 +210,23 @@
                         <h2 class="section-title">Squad / Participants</h2>
                         <div class="participants">
                             <div
-                                v-for="memberId in competitionsStore.currentCompetition.members"
-                                :key="memberId"
+                                v-for="member in memberDetails"
+                                :key="member.id"
                                 :class="[
                                     'participant',
-                                    memberId === competitionsStore.currentCompetition.owner
+                                    member.id === competitionsStore.currentCompetition.owner
                                         ? 'participant-owner'
                                         : 'participant-member',
                                 ]"
                             >
                                 <div class="participant-avatar">
-                                    {{ memberId.charAt(0).toUpperCase() }}
+                                    {{ member.username.charAt(0).toUpperCase() }}
                                 </div>
                                 <div>
-                                    <p class="participant-name">{{ memberId }}</p>
+                                    <p class="participant-name">{{ member.username }}</p>
                                     <p class="participant-role">
                                         {{
-                                            memberId === competitionsStore.currentCompetition.owner
+                                            member.id === competitionsStore.currentCompetition.owner
                                                 ? 'Owner'
                                                 : 'Member'
                                         }}
@@ -244,11 +244,7 @@
                         <div class="info-row">
                             <span class="info-label">Owner</span>
                             <span class="info-value">
-                                {{
-                                    competitionsStore.currentCompetition.owner
-                                        ? competitionsStore.currentCompetition.owner
-                                        : 'None'
-                                }}
+                                {{ ownerUsername ?? 'None' }}
                             </span>
                         </div>
                         <div class="info-row">
@@ -258,7 +254,7 @@
                             </span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Members</span>
+                            <span class="info-label">Participants</span>
                             <span class="info-value">
                                 {{ competitionsStore.currentCompetition.members.length }}
                             </span>
@@ -436,6 +432,19 @@
     const isOwnerless = computed(
         () => competitionsStore.currentCompetition && !competitionsStore.currentCompetition.owner
     );
+
+    /** memberDetails from the API, falling back to bare IDs if absent */
+    const memberDetails = computed(() =>
+        competitionsStore.currentCompetition?.memberDetails ??
+        (competitionsStore.currentCompetition?.members ?? []).map((id) => ({ id, username: id }))
+    );
+
+    /** Display name for the current owner */
+    const ownerUsername = computed(() => {
+        const ownerId = competitionsStore.currentCompetition?.owner;
+        if (!ownerId) return null;
+        return memberDetails.value.find((m) => m.id === ownerId)?.username ?? ownerId;
+    });
 
     onMounted(async () => {
         try {
