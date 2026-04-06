@@ -47,7 +47,7 @@ export class CompetitionController {
             // Resolve member IDs to usernames for display in the lobby
             const memberDocs = await usersCollection()
                 .find({ _id: { $in: competition.members } }, { projection: { _id: 1, username: 1 } })
-                .toArray();
+                .toArray() as { _id: string; username: string }[];
             const memberDetails = competition.members.map((mid) => ({
                 id: mid,
                 username: memberDocs.find((u) => u._id === mid)?.username ?? mid,

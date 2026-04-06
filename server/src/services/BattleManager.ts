@@ -88,6 +88,7 @@ class BattleManager {
             clearTimeout(timer);
             this.timers.delete(competitionId);
         }
+        this.clients.delete(competitionId);
     }
 
     // ── Messaging ────────────────────────────────────────────────────────────

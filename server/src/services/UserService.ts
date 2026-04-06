@@ -1,4 +1,4 @@
-import { type User, type PublicUser, type AuthRequest } from '../models/types';
+import { type PublicUser, type AuthRequest } from '../models/types';
 import { usersCollection } from '../db/collections';
 import { hashPassword, verifyPassword, validatePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
