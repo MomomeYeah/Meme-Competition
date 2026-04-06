@@ -55,18 +55,42 @@ export class CompetitionService {
         return competition;
     }
 
+    static readonly MAX_ENTRIES_PER_USER = 3;
+
     static async addFileToCompetition(competitionId: string, file: CompetitionFile): Promise<Competition> {
+        // Check per-user entry limit before attempting the update.
+        const existing = await competitionsCollection().findOne({ _id: competitionId });
+        if (!existing) throw new NotFoundError('Competition not found');
+
+        const userFileCount = existing.files.filter(f => f.uploaderId === file.uploaderId).length;
+        if (userFileCount >= CompetitionService.MAX_ENTRIES_PER_USER) {
+            throw new ValidationError(`You have reached the maximum of ${CompetitionService.MAX_ENTRIES_PER_USER} entries. Remove one or more submissions to upload more.`);
+        }
+
         // Combine the existence + battle-status guard with the update atomically so
         // a concurrent startBattle cannot slip through between the two operations.
         const competition = await competitionsCollection().findOneAndUpdate(
-            { _id: competitionId, 'battle.status': { $nin: ['active', 'complete'] } },
+            {
+                _id: competitionId,
+                'battle.status': { $nin: ['active', 'complete'] },
+                $expr: {
+                    $lt: [
+                        { $size: { $filter: { input: '$files', as: 'f', cond: { $eq: ['$$f.uploaderId', file.uploaderId] } } } },
+                        CompetitionService.MAX_ENTRIES_PER_USER,
+                    ],
+                },
+            },
             { $push: { files: file } },
             { returnDocument: 'after' },
         );
 
         if (!competition) {
-            const exists = await competitionsCollection().findOne({ _id: competitionId });
-            if (!exists) throw new NotFoundError('Competition not found');
+            const latest = await competitionsCollection().findOne({ _id: competitionId });
+            if (!latest) throw new NotFoundError('Competition not found');
+            const latestUserCount = latest.files.filter(f => f.uploaderId === file.uploaderId).length;
+            if (latestUserCount >= CompetitionService.MAX_ENTRIES_PER_USER) {
+                throw new ValidationError(`You have reached the maximum of ${CompetitionService.MAX_ENTRIES_PER_USER} entries. Remove one or more submissions to upload more.`);
+            }
             throw new ValidationError('Cannot upload entries once the battle has started');
         }
 
