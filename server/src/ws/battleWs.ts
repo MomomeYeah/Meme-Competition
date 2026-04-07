@@ -17,7 +17,12 @@ interface VoteMessage {
     payload: { competitionId: string; fileId: string; rating: number };
 }
 
-type ClientMessage = SubscribeMessage | VoteMessage;
+interface ChatMessage {
+    type: 'CHAT';
+    payload: { text: string };
+}
+
+type ClientMessage = SubscribeMessage | VoteMessage | ChatMessage;
 
 export function attachBattleWebSocket(httpServer: Server, manager: typeof battleManager): void {
     const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
@@ -70,6 +75,9 @@ export function attachBattleWebSocket(httpServer: Server, manager: typeof battle
                         manager.send(ws, { type: 'ERROR', payload: { code: 'INTERNAL', message: 'Internal error' } });
                     });
                     break;
+                case 'CHAT':
+                    handleChat(authWs, msg, manager);
+                    break;
                 default:
                     manager.send(ws, {
                         type: 'ERROR',
@@ -80,13 +88,13 @@ export function attachBattleWebSocket(httpServer: Server, manager: typeof battle
 
         ws.on('close', () => {
             if (authWs.competitionId) {
-                manager.removeClient(authWs.competitionId, authWs);
+                manager.scheduleLeave(authWs.competitionId, authWs);
             }
         });
 
         ws.on('error', () => {
             if (authWs.competitionId) {
-                manager.removeClient(authWs.competitionId, authWs);
+                manager.scheduleLeave(authWs.competitionId, authWs);
             }
         });
     });
@@ -110,11 +118,11 @@ async function handleSubscribe(ws: AuthenticatedWS, msg: SubscribeMessage, manag
 
     // Remove from previous room if switching
     if (ws.competitionId && ws.competitionId !== competitionId) {
-        manager.removeClient(ws.competitionId, ws);
+        manager.scheduleLeave(ws.competitionId, ws);
     }
 
     ws.competitionId = competitionId;
-    manager.registerClient(competitionId, ws);
+    manager.registerClientWithPresence(competitionId, ws);
 
     // Send current battle state if the battle is active
     if (competition.battle?.status === 'active') {
@@ -173,4 +181,36 @@ async function handleVote(ws: AuthenticatedWS, msg: VoteMessage, manager: typeof
     }
 
     manager.send(ws, { type: 'VOTE_ACK', payload: { fileId, rating } });
+}
+
+function handleChat(ws: AuthenticatedWS, msg: ChatMessage, manager: typeof battleManager): void {
+    if (!ws.competitionId) {
+        manager.send(ws, { type: 'ERROR', payload: { code: 'NOT_SUBSCRIBED', message: 'Subscribe to a competition first' } });
+        return;
+    }
+
+    const raw = msg.payload?.text;
+    if (typeof raw !== 'string' || raw.trim().length === 0) {
+        manager.send(ws, { type: 'ERROR', payload: { code: 'INVALID_CHAT', message: 'Message cannot be empty' } });
+        return;
+    }
+
+    const now = Date.now();
+    if (now - (ws.lastChatAt ?? 0) < 1000) {
+        manager.send(ws, { type: 'ERROR', payload: { code: 'RATE_LIMITED', message: 'Sending too fast' } });
+        return;
+    }
+    ws.lastChatAt = now;
+
+    const text = raw.trim().slice(0, 200);
+    const payload = {
+        messageId: crypto.randomUUID(),
+        userId: ws.userId,
+        username: ws.username,
+        text,
+        sentAt: new Date().toISOString(),
+    };
+
+    manager.appendChatHistory(ws.competitionId, payload);
+    manager.broadcast(ws.competitionId, { type: 'CHAT_MESSAGE', payload });
 }
