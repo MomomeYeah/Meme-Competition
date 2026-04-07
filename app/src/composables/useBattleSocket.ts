@@ -7,6 +7,26 @@ export interface FinalRating {
     averageRating: number;
 }
 
+export interface ChatMessage {
+    messageId: string;
+    type: 'chat';
+    userId: string;
+    username: string;
+    text: string;
+    sentAt: string;
+}
+
+export interface SystemMessage {
+    messageId: string;
+    type: 'system';
+    text: string;
+    sentAt: string;
+}
+
+export type ChatEntry = ChatMessage | SystemMessage;
+
+const MAX_CHAT_MESSAGES = 200;
+
 export interface UseBattleSocket {
     connected: Ref<boolean>;
     battleStatus: Ref<BattleStatus>;
@@ -19,9 +39,12 @@ export interface UseBattleSocket {
     entryDurationMs: Ref<number>;
     myVote: Ref<number | null>;
     finalRatings: Ref<FinalRating[]>;
+    chatMessages: Ref<ChatEntry[]>;
+    onlineUserIds: Ref<Set<string>>;
     connect: (competitionId: string) => void;
     disconnect: () => void;
     vote: (rating: number) => void;
+    sendChatMessage: (text: string) => void;
 }
 
 const WS_BASE = (import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000') + '/ws';
@@ -38,6 +61,8 @@ export function useBattleSocket(): UseBattleSocket {
     const entryDurationMs = ref(8000);
     const myVote = ref<number | null>(null);
     const finalRatings = ref<FinalRating[]>([]);
+    const chatMessages = ref<ChatEntry[]>([]);
+    const onlineUserIds = ref<Set<string>>(new Set());
 
     let ws: WebSocket | null = null;
     let countdownInterval: ReturnType<typeof setInterval> | null = null;
@@ -133,6 +158,50 @@ export function useBattleSocket(): UseBattleSocket {
                 timeRemaining.value = 0;
                 break;
             }
+            case 'PRESENCE_STATE': {
+                onlineUserIds.value = new Set(msg.payload.userIds as string[]);
+                break;
+            }
+            case 'CHAT_MESSAGE': {
+                const p = msg.payload;
+                const entry: ChatMessage = {
+                    messageId: p.messageId,
+                    type: 'chat',
+                    userId: p.userId,
+                    username: p.username,
+                    text: p.text,
+                    sentAt: p.sentAt,
+                };
+                chatMessages.value.push(entry);
+                if (chatMessages.value.length > MAX_CHAT_MESSAGES) {
+                    chatMessages.value.shift();
+                }
+                break;
+            }
+            case 'USER_JOINED': {
+                const p = msg.payload;
+                onlineUserIds.value = new Set([...onlineUserIds.value, p.userId]);
+                chatMessages.value.push({
+                    messageId: `${p.userId}-joined-${p.joinedAt}`,
+                    type: 'system',
+                    text: `${p.username} has entered the battle`,
+                    sentAt: p.joinedAt,
+                });
+                break;
+            }
+            case 'USER_LEFT': {
+                const p = msg.payload;
+                const updated = new Set(onlineUserIds.value);
+                updated.delete(p.userId);
+                onlineUserIds.value = updated;
+                chatMessages.value.push({
+                    messageId: `${p.userId}-left-${p.leftAt}`,
+                    type: 'system',
+                    text: `${p.username} has left the battle`,
+                    sentAt: p.leftAt,
+                });
+                break;
+            }
         }
     }
 
@@ -168,6 +237,14 @@ export function useBattleSocket(): UseBattleSocket {
         }
         connected.value = false;
         subscribedCompetitionId = null;
+        chatMessages.value = [];
+        onlineUserIds.value = new Set();
+    }
+
+    function sendChatMessage(text: string): void {
+        const trimmed = text.trim();
+        if (!ws || ws.readyState !== WebSocket.OPEN || !trimmed || trimmed.length > 200) return;
+        ws.send(JSON.stringify({ type: 'CHAT', payload: { text: trimmed } }));
     }
 
     function vote(rating: number): void {
@@ -200,8 +277,11 @@ export function useBattleSocket(): UseBattleSocket {
         entryDurationMs,
         myVote,
         finalRatings,
+        chatMessages,
+        onlineUserIds,
         connect,
         disconnect,
         vote,
+        sendChatMessage,
     };
 }

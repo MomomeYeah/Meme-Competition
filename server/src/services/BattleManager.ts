@@ -11,6 +11,7 @@ export interface AuthenticatedWS extends WebSocket {
     userId: string;
     username: string;
     competitionId?: string;
+    lastChatAt?: number;
 }
 
 // Server → Client message types
@@ -20,6 +21,10 @@ export type ServerMessage =
     | { type: 'VOTE_ACK'; payload: VoteAckPayload }
     | { type: 'VOTE_REJECTED'; payload: VoteRejectedPayload }
     | { type: 'BATTLE_COMPLETE'; payload: BattleCompletePayload }
+    | { type: 'CHAT_MESSAGE'; payload: ChatMessagePayload }
+    | { type: 'USER_JOINED'; payload: UserPresencePayload }
+    | { type: 'USER_LEFT'; payload: UserPresencePayload }
+    | { type: 'PRESENCE_STATE'; payload: PresenceStatePayload }
     | { type: 'ERROR'; payload: { code: string; message: string } };
 
 export interface BattleStatePayload {
@@ -64,9 +69,35 @@ export interface BattleCompletePayload {
     finalRatings: { fileId: string; averageRating: number }[];
 }
 
+export interface ChatMessagePayload {
+    messageId: string;
+    userId: string;
+    username: string;
+    text: string;
+    sentAt: string;
+}
+
+export interface UserPresencePayload {
+    userId: string;
+    username: string;
+    joinedAt?: string;
+    leftAt?: string;
+}
+
+export interface PresenceStatePayload {
+    userIds: string[];
+}
+
+const CHAT_HISTORY_LIMIT = 50;
+const LEAVE_DEBOUNCE_MS = 3000;
+
 class BattleManager {
     private timers = new Map<string, ReturnType<typeof setTimeout>>();
     private clients = new Map<string, Set<AuthenticatedWS>>();
+    // competitionId → userId → pending-leave timer
+    private presenceTimers = new Map<string, Map<string, ReturnType<typeof setTimeout>>>();
+    // competitionId → recent chat messages (ring buffer)
+    private chatHistory = new Map<string, ChatMessagePayload[]>();
 
     // ── Client registry ──────────────────────────────────────────────────────
 
@@ -81,6 +112,91 @@ class BattleManager {
         this.clients.get(competitionId)?.delete(ws);
     }
 
+    /** Register a client and handle presence: sends PRESENCE_STATE to the joiner,
+     *  cancels any pending leave timer (page refresh), and broadcasts USER_JOINED
+     *  only when the user is genuinely new to the room (first tab, not a refresh). */
+    registerClientWithPresence(competitionId: string, ws: AuthenticatedWS): void {
+        // Check before adding: does this user already have another socket in the room?
+        const room = this.clients.get(competitionId);
+        const alreadyPresent = room ? [...room].some((c) => c.userId === ws.userId) : false;
+
+        this.registerClient(competitionId, ws);
+
+        // Send current presence snapshot to the new joiner
+        const onlineIds = this.getOnlineUserIds(competitionId);
+        this.send(ws, { type: 'PRESENCE_STATE', payload: { userIds: onlineIds } });
+
+        // Send recent chat history to the new joiner
+        const history = this.chatHistory.get(competitionId) ?? [];
+        for (const msg of history) {
+            this.send(ws, { type: 'CHAT_MESSAGE', payload: msg });
+        }
+
+        const competitionPresence = this.presenceTimers.get(competitionId);
+        const pendingTimer = competitionPresence?.get(ws.userId);
+
+        if (pendingTimer !== undefined) {
+            // User refreshed within the debounce window — cancel leave, no announcement
+            clearTimeout(pendingTimer);
+            competitionPresence!.delete(ws.userId);
+        } else if (!alreadyPresent) {
+            // Genuinely new to the room (first tab) — announce to all (including the joiner)
+            this.broadcast(competitionId, {
+                type: 'USER_JOINED',
+                payload: { userId: ws.userId, username: ws.username, joinedAt: new Date().toISOString() },
+            });
+        }
+        // If alreadyPresent and no pending timer: user opened a second tab — no announcement
+    }
+
+    /** Remove a client and schedule USER_LEFT after a debounce window.
+     *  If the user still has another tab open, the leave is cancelled entirely. */
+    scheduleLeave(competitionId: string, ws: AuthenticatedWS): void {
+        this.removeClient(competitionId, ws);
+
+        // Check if this user has other open sockets in the room
+        const room = this.clients.get(competitionId);
+        const stillPresent = room && [...room].some((c) => c.userId === ws.userId);
+        if (stillPresent) return;
+
+        // Debounce: wait before broadcasting USER_LEFT
+        if (!this.presenceTimers.has(competitionId)) {
+            this.presenceTimers.set(competitionId, new Map());
+        }
+        const competitionPresence = this.presenceTimers.get(competitionId)!;
+
+        const timer = setTimeout(() => {
+            competitionPresence.delete(ws.userId);
+            this.broadcast(competitionId, {
+                type: 'USER_LEFT',
+                payload: { userId: ws.userId, username: ws.username, leftAt: new Date().toISOString() },
+            });
+        }, LEAVE_DEBOUNCE_MS);
+
+        competitionPresence.set(ws.userId, timer);
+    }
+
+    /** Returns the deduplicated set of userIds currently connected to a competition. */
+    getOnlineUserIds(competitionId: string): string[] {
+        const room = this.clients.get(competitionId);
+        if (!room) return [];
+        const ids = new Set<string>();
+        for (const ws of room) ids.add(ws.userId);
+        return [...ids];
+    }
+
+    /** Append a chat message to the ring buffer for a competition. */
+    appendChatHistory(competitionId: string, msg: ChatMessagePayload): void {
+        if (!this.chatHistory.has(competitionId)) {
+            this.chatHistory.set(competitionId, []);
+        }
+        const history = this.chatHistory.get(competitionId)!;
+        history.push(msg);
+        if (history.length > CHAT_HISTORY_LIMIT) {
+            history.shift();
+        }
+    }
+
     /** Cancel an in-progress battle timer, e.g. when a competition is deleted. */
     cancelBattle(competitionId: string): void {
         const timer = this.timers.get(competitionId);
@@ -89,6 +205,16 @@ class BattleManager {
             this.timers.delete(competitionId);
         }
         this.clients.delete(competitionId);
+
+        // Clean up presence timers
+        const competitionPresence = this.presenceTimers.get(competitionId);
+        if (competitionPresence) {
+            for (const t of competitionPresence.values()) clearTimeout(t);
+            this.presenceTimers.delete(competitionId);
+        }
+
+        // Clean up chat history
+        this.chatHistory.delete(competitionId);
     }
 
     // ── Messaging ────────────────────────────────────────────────────────────

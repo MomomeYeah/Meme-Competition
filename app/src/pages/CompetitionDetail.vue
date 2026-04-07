@@ -226,6 +226,7 @@
                                     member.id === competitionsStore.currentCompetition.owner
                                         ? 'participant-owner'
                                         : 'participant-member',
+                                    !battle.onlineUserIds.value.has(member.id) && 'participant-offline',
                                 ]"
                             >
                                 <div class="participant-avatar">
@@ -330,6 +331,13 @@
                         </button>
                     </div>
 
+                    <BattleChat
+                        class="side-chat"
+                        :messages="battle.chatMessages.value"
+                        :current-user-id="authStore.user?.id ?? ''"
+                        @send="battle.sendChatMessage"
+                    />
+
                     <div class="side-back">
                         <button class="back-btn" type="button" @click="router.push('/dashboard')">
                             <i class="mdi mdi-arrow-left"></i>
@@ -385,6 +393,7 @@
     import type * as competitionsApi from "../api/competitions.api";
     import { startBattle as apiBattleStart } from "../api/competitions.api";
     import { useBattleSocket } from "../composables/useBattleSocket";
+    import BattleChat from "../components/BattleChat.vue";
 
     const MAX_ENTRIES = 3;
 
@@ -631,10 +640,15 @@
         width: 300px;
         flex-shrink: 0;
         border-left: 1px solid rgba(255, 255, 255, 0.04);
-        overflow-y: auto;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
         gap: 0;
+    }
+
+    .side-chat {
+        flex: 1;
+        overflow: hidden;
     }
 
     @media (max-width: 900px) {
@@ -652,6 +666,11 @@
             width: 100%;
             border-left: none;
             border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .side-chat {
+            height: 320px;
+            max-height: 320px;
         }
     }
 
@@ -961,6 +980,11 @@
         border-left-color: var(--bt-outline-variant);
     }
 
+    .participant-offline {
+        opacity: 0.38;
+        filter: grayscale(0.6);
+    }
+
     .participant-avatar {
         width: 32px;
         height: 32px;
@@ -1000,6 +1024,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        flex-shrink: 0;
     }
 
     .side-title {
