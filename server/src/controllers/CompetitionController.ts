@@ -125,7 +125,6 @@ export class CompetitionController {
         }
     }
 
-    // TODO: lambda function to generate thumbnail images for UI
     static async uploadFile(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.user!.userId;
